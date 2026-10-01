@@ -1,5 +1,6 @@
 INVENTORY_FILE = "inventory.txt"
 
+
 def load_inventory():
     try:
         with open(INVENTORY_FILE, "r") as file:
@@ -81,6 +82,7 @@ def main():
             break
 
         inventory = process_delivery(inventory, quantity)
+        history.append(quantity)
         delivery_tax = calculate_tax(quantity)
         deliveries_processed += 1
 
@@ -93,6 +95,7 @@ def main():
 
     print("\nFinal Summary")
     print(f"Total Deliveries Processed: {deliveries_processed}")
+    print(f"Transaction History: {history}")
     generate_report(inventory, rejected_entries)
 
 
