@@ -20,6 +20,13 @@ def load_inventory():
     return total, history
 
 
+def save_inventory(total, history):
+  
+    with open(INVENTORY_FILE, "w") as file:
+        file.write(f"{total}\n")
+        file.write(",".join(str(amount) for amount in history) + "\n")
+
+
 def get_valid_input():
     entry = input(
         "Enter stock quantity (or 'quit' to finish): "
@@ -92,6 +99,9 @@ def main():
         if inventory > 500:
             print("OVERSTOCK ALERT: Inventory exceeds 500 units!")
             break
+
+    save_inventory(inventory, history)
+    print(f"\nInventory saved to {INVENTORY_FILE}")
 
     print("\nFinal Summary")
     print(f"Total Deliveries Processed: {deliveries_processed}")
