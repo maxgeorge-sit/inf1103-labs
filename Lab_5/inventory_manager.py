@@ -1,3 +1,7 @@
+import json
+import os
+
+INVENTORY_FILE = "inventory.json"
 DIVIDER = "-" * 48
 
 
@@ -12,7 +16,6 @@ def search_product(inventory, product_id):
 
 
 def add_product(inventory, product_id, name, price, stock):
-    
     product_id = product_id.strip().upper()
 
     if search_product(inventory, product_id) is not None:
@@ -29,7 +32,6 @@ def add_product(inventory, product_id, name, price, stock):
 
 
 def update_stock(inventory, product_id, new_stock):
-
     product = search_product(inventory, product_id)
 
     if product is None:
@@ -64,23 +66,36 @@ def display_all(inventory):
     print(DIVIDER)
 
 
+def load_inventory():
+    if not os.path.exists(INVENTORY_FILE):
+        print(f"{INVENTORY_FILE} not found. Starting with an empty inventory.")
+        return []
+
+    print(f"{INVENTORY_FILE} found.")
+
+    try:
+        with open(INVENTORY_FILE, "r") as file:
+            inventory = json.load(file)
+    except (OSError, ValueError):
+        print(f"Could not read {INVENTORY_FILE}. Starting with an empty inventory.")
+        return []
+
+    if not isinstance(inventory, list):
+        print(f"{INVENTORY_FILE} has an unexpected format. Starting with an empty inventory.")
+        return []
+
+    print("Inventory loaded successfully.")
+    return inventory
+
+
 def main():
-    inventory = []
+    print("=" * 40)
+    print("INVENTORY MANAGEMENT SYSTEM")
+    print("=" * 40)
+    print()
 
-    add_product(inventory, "P001", "Laptop", 1200.00, 15)
-    add_product(inventory, "P002", "Mouse", 25.50, 40)
-    add_product(inventory, "P003", "Keyboard", 45.00, 25)
+    inventory = load_inventory()
     display_all(inventory)
-
-    add_product(inventory, "P004", "Monitor", 299.99, 10)
-    update_stock(inventory, "P002", 50)
-    display_all(inventory)
-
-    product = search_product(inventory, "P004")
-    if product is not None:
-        print("\nProduct Found")
-        display_product(product)
-
 
 if __name__ == "__main__":
     main()
