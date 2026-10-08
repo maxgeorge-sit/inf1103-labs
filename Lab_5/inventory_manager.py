@@ -1,121 +1,85 @@
-INVENTORY_FILE = "inventory.txt"
-TOTAL_HEADER = "Current Inventory Total:"
-HISTORY_HEADER = "Transaction History:"
+DIVIDER = "-" * 48
 
 
-def strip_header(line, header):
-    return line.replace(header, "").strip()
+def search_product(inventory, product_id):
+    product_id = product_id.strip().upper()
+
+    for product in inventory:
+        if product["id"] == product_id:
+            return product
+
+    return None
 
 
-def load_inventory():
-    try:
-        with open(INVENTORY_FILE, "r") as file:
-            lines = file.read().splitlines()
-    except FileNotFoundError:
-        return 0, []
+def add_product(inventory, product_id, name, price, stock):
+    
+    product_id = product_id.strip().upper()
 
-    if not lines:
-        return 0, []
+    if search_product(inventory, product_id) is not None:
+        return False
 
-    total = int(strip_header(lines[0], TOTAL_HEADER))
-
-    history = []
-    if len(lines) > 1:
-        history_text = strip_header(lines[1], HISTORY_HEADER)
-        if history_text:
-            history = [int(amount) for amount in history_text.split(",")]
-
-    return total, history
+    product = {
+        "id": product_id,
+        "name": name.strip(),
+        "price": price,
+        "stock": stock,
+    }
+    inventory.append(product)
+    return True
 
 
-def save_inventory(total, history):
-    history_text = ",".join(str(amount) for amount in history)
+def update_stock(inventory, product_id, new_stock):
 
-    with open(INVENTORY_FILE, "w") as file:
-        file.write(f"{TOTAL_HEADER} {total}\n")
-        file.write(f"{HISTORY_HEADER} {history_text}\n")
+    product = search_product(inventory, product_id)
 
+    if product is None:
+        return False
 
-def get_valid_input():
-    entry = input(
-        "Enter stock quantity (or 'quit' to finish): "
-    ).strip()
-
-    if entry.lower() == "quit":
-        return "quit"
-
-    if entry.startswith(("-", "+")):
-        digits = entry[1:]
-    else:
-        digits = entry
-
-    if not digits.isdigit():
-        raise ValueError("Enter a whole number.")
-
-    try:
-        quantity = int(entry)
-    except ValueError:
-        raise ValueError("Enter a valid integer.") from None
-
-    if quantity < 0:
-        raise ValueError("Negative quantities are not allowed.")
-
-    return quantity
+    product["stock"] = new_stock
+    return True
 
 
-def process_delivery(current_total, new_value):
-    new_total = current_total + new_value
-    return new_total
+def display_product(product):
+    print(DIVIDER)
+    print(f"ID: {product['id']}")
+    print(f"Name: {product['name']}")
+    print(f"Price: ${product['price']:.2f}")
+    print(f"Stock: {product['stock']}")
+    print(DIVIDER)
 
 
-def calculate_tax(amount):
-    tax = amount * 0.10
-    return tax
+def display_all(inventory):
+    print("\nCurrent Inventory")
+    print(DIVIDER)
 
+    if not inventory:
+        print("No products in inventory.")
 
-def generate_report(total_units, failed_attempts):
-    print(f"Total Units Processed: {total_units}")
-    print(f"Number of Failed/Rejected Entries: {failed_attempts}")
+    for product in inventory:
+        print(
+            f"ID: {product['id']} | Name: {product['name']} | "
+            f"Price: ${product['price']:.2f} | Stock: {product['stock']}"
+        )
+
+    print(DIVIDER)
 
 
 def main():
-    inventory, history = load_inventory()
-    rejected_entries = 0
-    deliveries_processed = 0
+    inventory = []
 
-    print(f"Loaded inventory: {inventory} units")
-    print(f"Loaded history: {history}")
+    add_product(inventory, "P001", "Laptop", 1200.00, 15)
+    add_product(inventory, "P002", "Mouse", 25.50, 40)
+    add_product(inventory, "P003", "Keyboard", 45.00, 25)
+    display_all(inventory)
 
-    while True:
-        try:
-            quantity = get_valid_input()
-        except ValueError as error:
-            print(f"Error: {error}")
-            rejected_entries += 1
-            continue
+    add_product(inventory, "P004", "Monitor", 299.99, 10)
+    update_stock(inventory, "P002", 50)
+    display_all(inventory)
 
-        if quantity == "quit":
-            break
-
-        inventory = process_delivery(inventory, quantity)
-        history.append(quantity)
-        delivery_tax = calculate_tax(quantity)
-        deliveries_processed += 1
-
-        print(f"Current inventory: {inventory} units")
-        print(f"Tax for this delivery: {delivery_tax:.2f}")
-
-        if inventory > 500:
-            print("OVERSTOCK ALERT: Inventory exceeds 500 units!")
-            break
-
-    save_inventory(inventory, history)
-    print(f"\nInventory saved to {INVENTORY_FILE}")
-
-    print("\nFinal Summary")
-    print(f"Total Deliveries Processed: {deliveries_processed}")
-    print(f"Transaction History: {history}")
-    generate_report(inventory, rejected_entries)
+    product = search_product(inventory, "P004")
+    if product is not None:
+        print("\nProduct Found")
+        display_product(product)
 
 
 if __name__ == "__main__":
