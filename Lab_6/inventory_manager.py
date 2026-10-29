@@ -26,7 +26,7 @@ class Product:
         self.__name = name.strip()
         self.__price = float(price)
 
-        # Go through update_stock() so the same stock rules apply here too.
+        # Goes through update_stock() so the same stock rules apply here as well.
         self.__stock = 0
         self.update_stock(stock)
 
@@ -59,8 +59,7 @@ class Product:
         print(f"Price: ${self.__price:.2f}")
         print(f"Stock: {self.__stock}")
 
-    # __str__ has two underscores on BOTH sides, so it is a public special
-    # method like __init__, not a private one. print(product) uses it.
+
     def __str__(self):
         return (
             f"ID: {self.__product_id} | Name: {self.__name} | "
@@ -108,97 +107,48 @@ class Inventory:
         return list(self.__products)
 
 
-# ---------- Data functions ----------
+# ---------- File handling ----------
 
-def search_product(inventory, product_id):
-    product_id = product_id.strip().upper()
-
-    for product in inventory:
-        if product["id"] == product_id:
-            return product
-
-    return None
-
-
-def add_product(inventory, product_id, name, price, stock):
-    product_id = product_id.strip().upper()
-
-    if search_product(inventory, product_id) is not None:
-        return False
-
-    product = {
-        "id": product_id,
-        "name": name.strip(),
-        "price": price,
-        "stock": stock,
-    }
-    inventory.append(product)
-    return True
-
-
-def update_stock(inventory, product_id, new_stock):
-    product = search_product(inventory, product_id)
-
-    if product is None:
-        return False
-
-    product["stock"] = new_stock
-    return True
-
-
-def display_product(product):
-    print(DIVIDER)
-    print(f"ID: {product['id']}")
-    print(f"Name: {product['name']}")
-    print(f"Price: ${product['price']:.2f}")
-    print(f"Stock: {product['stock']}")
-    print(DIVIDER)
-
-
-def display_all(inventory):
-    print("\nCurrent Inventory")
-    print(DIVIDER)
-
-    if not inventory:
-        print("No products in inventory.")
-
-    for product in inventory:
-        print(
-            f"ID: {product['id']} | Name: {product['name']} | "
-            f"Price: ${product['price']:.2f} | Stock: {product['stock']}"
-        )
-
-    print(DIVIDER)
-
-
-# ---------- Persistence ----------
-
-def load_inventory():
+def load_inventory(inventory):
     if not os.path.exists(INVENTORY_FILE):
         print(f"{INVENTORY_FILE} not found. Starting with an empty inventory.")
-        return []
+        return
 
     print(f"{INVENTORY_FILE} found.")
 
     try:
         with open(INVENTORY_FILE, "r") as file:
-            inventory = json.load(file)
+            data = json.load(file)
     except (OSError, ValueError):
         print(f"Could not read {INVENTORY_FILE}. Starting with an empty inventory.")
-        return []
+        return
 
-    if not isinstance(inventory, list):
+    if not isinstance(data, list):
         print(f"{INVENTORY_FILE} has an unexpected format. Starting with an empty inventory.")
-        return []
+        return
+
+    # Each saved dictionary becomes a Product object.
+    for item in data:
+        product = Product(item["id"], item["name"], item["price"], item["stock"])
+        inventory.add_product(product)
 
     print("Inventory loaded successfully.")
-    return inventory
 
 
 def save_inventory(inventory):
+    # Each Product becomes a dictionary again, because JSON cannot store objects.
+    data = []
+    for product in inventory.get_products():
+        data.append({
+            "id": product.get_product_id(),
+            "name": product.get_name(),
+            "price": product.get_price(),
+            "stock": product.get_stock(),
+        })
+
     try:
         with open(INVENTORY_FILE, "w") as file:
-            json.dump(inventory, file, indent=4)
+            json.dump(data, file, indent=4)
     except OSError as error:
         print(f"Error: Could not save inventory ({error}).")
         return False
@@ -258,7 +208,7 @@ def ask_until_valid(prompt, parser):
             print(f"Error: {error}")
 
 
-# ---------- Menu ----------
+# ---------- Main program ----------
 
 def show_menu():
     print("----------- MENU -----------")
@@ -275,7 +225,7 @@ def add_product_menu(inventory):
     print("\nAdd New Product")
     product_id = ask_until_valid("Product ID: ", parse_text)
 
-    if search_product(inventory, product_id) is not None:
+    if inventory.search_product(product_id) is not None:
         print(f"\nError: Product ID {product_id.upper()} already exists.")
         return
 
@@ -283,41 +233,44 @@ def add_product_menu(inventory):
     price = ask_until_valid("Price: ", parse_price)
     stock = ask_until_valid("Stock Quantity: ", parse_stock)
 
-    add_product(inventory, product_id, name, price, stock)
+    product = Product(product_id, name, price, stock)
+    inventory.add_product(product)
     print("\nProduct added successfully!")
 
 
 def update_stock_menu(inventory):
     print("\nUpdate Stock")
     product_id = ask_until_valid("Enter Product ID: ", parse_text)
-    product = search_product(inventory, product_id)
+    product = inventory.search_product(product_id)
 
     if product is None:
         print("\nProduct not found.")
         return
 
     print("\nProduct Found:")
-    print(f"Name: {product['name']}")
-    print(f"Current Stock: {product['stock']}")
+    print(f"Name: {product.get_name()}")
+    print(f"Current Stock: {product.get_stock()}")
 
     print()
     new_stock = ask_until_valid("New Stock Quantity: ", parse_stock)
 
-    update_stock(inventory, product_id, new_stock)
+    product.update_stock(new_stock)
     print("\nStock updated successfully!")
 
 
 def search_product_menu(inventory):
     print("\nSearch Product")
     product_id = ask_until_valid("Enter Product ID: ", parse_text)
-    product = search_product(inventory, product_id)
+    product = inventory.search_product(product_id)
 
     if product is None:
         print("\nProduct not found.")
         return
 
     print("\nProduct Found")
-    display_product(product)
+    print(DIVIDER)
+    product.display_information()
+    print(DIVIDER)
 
 
 def main():
@@ -326,7 +279,8 @@ def main():
     print("=" * 40)
     print()
 
-    inventory = load_inventory()
+    inventory = Inventory()
+    load_inventory(inventory)
 
     print()
     show_menu()
@@ -335,7 +289,7 @@ def main():
         choice = input("\nEnter option: ").strip()
 
         if choice == "1":
-            display_all(inventory)
+            inventory.display_all()
         elif choice == "2":
             add_product_menu(inventory)
         elif choice == "3":
