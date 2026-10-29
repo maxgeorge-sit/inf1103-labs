@@ -1,0 +1,77 @@
+commit 3ebb39cbf408b1aa5bd8bf55a9d2552316971fba
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Oct 8 17:58:47 2026 +0800
+
+    final save_inventory is verified
+
+commit e7e98dcc15f79966b4a525fccc22021dc15d3ef9
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Oct 8 17:46:52 2026 +0800
+
+    added load_inventory
+
+commit 4cd8e41ec41617c804b416ccfe6aba6ff7f077e8
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Oct 8 17:28:12 2026 +0800
+
+    created the Dictionary and added a few products
+
+commit a86b051b89cb109d3a34cb05d53e495af7385457
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Oct 8 17:15:56 2026 +0800
+
+    added headers
+
+commit 027531da0e0c4341bb89b6b1e0f46262b304e7a9
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Oct 8 17:01:59 2026 +0800
+
+    Restruture repository: Files moved to subdirectory
+
+commit 7d8ac15bc5fa292368fbd9e8deedfb9484d1a9be
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Oct 8 16:55:14 2026 +0800
+
+    Log.txt removed as it's not part of code
+
+commit df50c0693de54fde7ed9bedac4fe3ccc6a119a6c
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Sep 17 22:02:35 2026 +0800
+
+    testing
+
+commit 8af23193178f24e5ed966d5042baf785a9140c42
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Sep 17 21:50:41 2026 +0800
+
+    Smart Inventor Auditor
+
+commit fe469af079290510c4bf611b55b0c785c947831d
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Sep 10 17:01:58 2026 +0800
+
+    Fifth  Post
+
+commit 045dcac07489278ab004ef5a4bef989e34300eb2
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Sep 10 16:57:37 2026 +0800
+
+    Fourth Post
+
+commit 2de949b1b28cdcc9c5d48105bb361d9566df729f
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Sep 10 16:50:37 2026 +0800
+
+    Third Post
+
+commit 2b686cca8dfc8d097c29861b7eccf3904615859a
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Sep 10 16:46:05 2026 +0800
+
+    Second Post
+
+commit 2789453721d8d1f0d3cfabdf9754020272640dd6
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Sep 10 16:34:00 2026 +0800
+
+    First Post
