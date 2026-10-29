@@ -288,6 +288,8 @@ def search_product_menu(inventory):
 
 def run_menu(inventory):
     while True:
+        print()
+        show_menu()
         choice = input("\nEnter option: ").strip()
 
         if choice == "1":
@@ -324,9 +326,6 @@ def main():
 
     inventory = Inventory()
     load_inventory(inventory)
-
-    print()
-    show_menu()
 
     # Ctrl+C, or input that ends early,
     # stops the program with a message instead of a traceback.
