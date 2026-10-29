@@ -26,7 +26,7 @@ class Product:
         self.__name = name.strip()
         self.__price = float(price)
 
-        # Goes through update_stock() so that the same stock rules apply here.
+        # Go through update_stock() so the same stock rules apply here too.
         self.__stock = 0
         self.update_stock(stock)
 
@@ -66,6 +66,46 @@ class Product:
             f"ID: {self.__product_id} | Name: {self.__name} | "
             f"Price: ${self.__price:.2f} | Stock: {self.__stock}"
         )
+
+
+# ---------- Inventory class ----------
+
+class Inventory:
+    def __init__(self):
+        self.__products = []
+
+    def add_product(self, product):
+        if self.search_product(product.get_product_id()) is not None:
+            return False
+
+        self.__products.append(product)
+        return True
+
+    def search_product(self, product_id):
+        product_id = product_id.strip().upper()
+
+        for product in self.__products:
+            if product.get_product_id() == product_id:
+                return product
+
+        return None
+
+    def display_all(self):
+        print("\nCurrent Inventory")
+        print(DIVIDER)
+
+        if not self.__products:
+            print("No products in inventory.")
+
+        for product in self.__products:
+            print(product)
+
+        print(DIVIDER)
+
+    # Returns a copy, so other code can read the products but cannot add
+    # or remove any without going through the Inventory.
+    def get_products(self):
+        return list(self.__products)
 
 
 # ---------- Data functions ----------
