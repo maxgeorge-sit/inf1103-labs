@@ -59,7 +59,8 @@ class Product:
         print(f"Price: ${self.__price:.2f}")
         print(f"Stock: {self.__stock}")
 
-
+    # __str__ is a public special
+    # method like __init__, not a private one. print(product) uses it.
     def __str__(self):
         return (
             f"ID: {self.__product_id} | Name: {self.__name} | "
@@ -101,7 +102,7 @@ class Inventory:
 
         print(DIVIDER)
 
-    # Returns a copy, so other code can read the products but cannot add
+    # Returns a copy, so other code can read the products but cannot add 
     # or remove any without going through the Inventory.
     def get_products(self):
         return list(self.__products)
@@ -127,16 +128,28 @@ def load_inventory(inventory):
         print(f"{INVENTORY_FILE} has an unexpected format. Starting with an empty inventory.")
         return
 
-    # Each saved dictionary becomes a Product object.
+    # Each saved dictionary becomes a Product object. A record the Product
+    # rejects (missing field, negative stock, ...) or a duplicate ID is skipped.
+    skipped = 0
     for item in data:
-        product = Product(item["id"], item["name"], item["price"], item["stock"])
-        inventory.add_product(product)
+        try:
+            product = Product(item["id"], item["name"], item["price"], item["stock"])
+        except (KeyError, TypeError, ValueError):
+            skipped += 1
+            continue
+
+        if not inventory.add_product(product):
+            skipped += 1
+
+    if skipped > 0:
+        print(f"Warning: Skipped {skipped} invalid or duplicate product record(s).")
+        print("They will be left out the next time the inventory is saved.")
 
     print("Inventory loaded successfully.")
 
 
 def save_inventory(inventory):
-    # Each Product becomes a dictionary again, because JSON cannot store objects.
+    # Each Product becomes a dictionary again as JSON cannot store objects.
     data = []
     for product in inventory.get_products():
         data.append({
@@ -273,18 +286,7 @@ def search_product_menu(inventory):
     print(DIVIDER)
 
 
-def main():
-    print("=" * 40)
-    print("INVENTORY MANAGEMENT SYSTEM")
-    print("=" * 40)
-    print()
-
-    inventory = Inventory()
-    load_inventory(inventory)
-
-    print()
-    show_menu()
-
+def run_menu(inventory):
     while True:
         choice = input("\nEnter option: ").strip()
 
@@ -309,9 +311,29 @@ def main():
 
             print("\nThank you for using Inventory Management System.")
             print("Program terminated.")
-            break
+            return
         else:
             print("\nInvalid option. Please enter a number from 1 to 6.")
+
+
+def main():
+    print("=" * 40)
+    print("INVENTORY MANAGEMENT SYSTEM")
+    print("=" * 40)
+    print()
+
+    inventory = Inventory()
+    load_inventory(inventory)
+
+    print()
+    show_menu()
+
+    # Ctrl+C, or input that ends early,
+    # stops the program with a message instead of a traceback.
+    try:
+        run_menu(inventory)
+    except (KeyboardInterrupt, EOFError):
+        print("\n\nProgram stopped. Changes since the last save were not saved.")
 
 
 if __name__ == "__main__":
