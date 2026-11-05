@@ -4,7 +4,7 @@
 import contextlib
 import io
 
-from inventory_manager import PhysicalProduct, Product
+from inventory_manager import DigitalProduct, PhysicalProduct, Product
 
 results = []
 
@@ -57,8 +57,33 @@ def test_physical_product():
     print(guitar)
 
 
+def test_digital_product():
+    show_heading("Digital products store and display their download size")
+    operating_system = DigitalProduct("D002", "Operating System", 139.99, 50, 4500)
+
+    output = printed_by(operating_system.display_information)
+    print("operating_system.display_information() prints:")
+    print(output)
+
+    check(isinstance(operating_system, Product), "a DigitalProduct is-a Product")
+    check(operating_system.get_download_size() == 4500, "the download size is stored")
+    check("Name: Operating System" in output, "the shared product details are displayed")
+    check("Download Size: 4500.00 MB" in output, "the download size is displayed")
+
+    try:
+        DigitalProduct("D003", "Empty Download", 1.00, 1, 0)
+        check(False, "a download size of 0 is refused")
+    except ValueError:
+        check(True, "a download size of 0 is refused")
+
+    print()
+    print("print(operating_system) also uses Product's __str__, so no download size yet:")
+    print(operating_system)
+
+
 def main():
     test_physical_product()
+    test_digital_product()
 
     passed = results.count(True)
     print()

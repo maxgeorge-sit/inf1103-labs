@@ -105,6 +105,27 @@ class PhysicalProduct(Product):
         print(f"Weight: {self.__weight:.2f} kg")
 
 
+# ---------- DigitalProduct class ----------
+
+class DigitalProduct(Product):
+    def __init__(self, product_id, name, price, stock, download_size):
+        # Same pattern as PhysicalProduct: Product's constructor runs first.
+        super().__init__(product_id, name, price, stock)
+
+        # A digital product has no weight; it has a download size in megabytes.
+        self.__download_size = check_positive_number(download_size, "Download size")
+
+    def get_download_size(self):
+        return self.__download_size
+
+    def display_information(self):
+        print(f"ID: {self.get_product_id()}")
+        print(f"Name: {self.get_name()}")
+        print(f"Price: ${self.get_price():.2f}")
+        print(f"Stock: {self.get_stock()}")
+        print(f"Download Size: {self.__download_size:.2f} MB")
+
+
 # ---------- Inventory class ----------
 
 class Inventory:
