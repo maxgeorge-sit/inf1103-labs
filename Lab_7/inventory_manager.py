@@ -8,9 +8,6 @@ DIVIDER = "-" * 48
 
 
 # ---------- Product class ----------
-
-# Product is abstract: it holds everything products share, but only its
-# subclasses (PhysicalProduct and DigitalProduct) can be created.
 class Product(ABC):
     def __init__(self, product_id, name, price, stock):
         if not isinstance(product_id, str) or not product_id.strip():
@@ -70,10 +67,16 @@ class Product(ABC):
             f"Price: ${self.__price:.2f} | Stock: {self.__stock}"
         )
 
-    # An abstract method names a behaviour without providing it. Every
-    # subclass must implement it, or that subclass cannot be created either.
     @abstractmethod
     def get_fulfilment_info(self):
+        pass
+
+
+# ---------- CanBeShipped interface ----------
+
+class CanBeShipped(ABC):
+    @abstractmethod
+    def calculate_shipping_cost(self):
         pass
 
 
@@ -92,7 +95,8 @@ def check_positive_number(value, label):
 
 # ---------- PhysicalProduct class ----------
 
-class PhysicalProduct(Product):
+# One parent class (Product) plus one interface (CanBeShipped).
+class PhysicalProduct(Product, CanBeShipped):
     def __init__(self, product_id, name, price, stock, weight):
         # super() runs Product's constructor, which checks and stores the
         # ID, name, price and stock exactly as it does for any product.
@@ -116,6 +120,10 @@ class PhysicalProduct(Product):
 
     def get_fulfilment_info(self):
         return "This product requires physical shipping."
+
+    # Required by CanBeShipped. Simple rule: a $5.00 base fee plus $2.00 per kg.
+    def calculate_shipping_cost(self):
+        return 5.00 + 2.00 * self.__weight
 
 
 # ---------- DigitalProduct class ----------
@@ -422,6 +430,11 @@ def search_product_menu(inventory):
     print(DIVIDER)
     product.display_information()
     print(f"Fulfilment: {product.get_fulfilment_info()}")
+
+    # Only products that sign CanBeShipped have a shipping cost.
+    if isinstance(product, CanBeShipped):
+        print(f"Shipping Cost: ${product.calculate_shipping_cost():.2f}")
+
     print(DIVIDER)
 
 

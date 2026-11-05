@@ -1,6 +1,3 @@
-# Checks for the Lab 7 product classes.
-# Run it from your project folder with:  python test_products.py
-
 import contextlib
 import io
 import os
@@ -8,6 +5,7 @@ import tempfile
 
 from inventory_manager import (
     INVENTORY_FILE,
+    CanBeShipped,
     DigitalProduct,
     Inventory,
     PhysicalProduct,
@@ -132,6 +130,46 @@ def test_abstract_product():
         check(True, "a subclass without get_fulfilment_info() is refused")
 
 
+def test_shipping_cost():
+    show_heading("Physical products can calculate shipping costs")
+    print("Rule: a $5.00 base fee plus $2.00 per kg")
+    print()
+
+    for weight, expected in [(0.2, 5.40), (3.5, 12.00), (10.0, 25.00)]:
+        parcel = PhysicalProduct("P100", "Parcel", 10.00, 1, weight)
+        cost = parcel.calculate_shipping_cost()
+        check(
+            round(cost, 2) == expected,
+            f"a {weight} kg product costs ${cost:.2f} to ship (expected ${expected:.2f})",
+        )
+
+    # A class that signs CanBeShipped must keep the contract.
+    class Crate(CanBeShipped):
+        pass
+
+    try:
+        Crate()
+        check(False, "signing CanBeShipped without calculate_shipping_cost() is refused")
+    except TypeError:
+        check(True, "signing CanBeShipped without calculate_shipping_cost() is refused")
+
+
+def test_digital_not_shippable():
+    show_heading("Digital products are not required to implement shipping")
+    guitar = PhysicalProduct("P005", "Guitar", 350.00, 5, 3.5)
+    operating_system = DigitalProduct("D002", "Operating System", 139.99, 50, 4500)
+
+    check(isinstance(guitar, CanBeShipped), "a PhysicalProduct signs CanBeShipped")
+    check(
+        not isinstance(operating_system, CanBeShipped),
+        "a DigitalProduct does not sign CanBeShipped",
+    )
+    check(
+        not hasattr(operating_system, "calculate_shipping_cost"),
+        "a DigitalProduct has no shipping method and can still be created",
+    )
+
+
 def test_inventory_operations():
     show_heading("Inventory operations continue to work")
     inventory = Inventory()
@@ -201,6 +239,8 @@ def main():
     test_digital_product()
     test_fulfilment_info()
     test_abstract_product()
+    test_shipping_cost()
+    test_digital_not_shippable()
     test_inventory_operations()
     test_json_round_trip()
 
