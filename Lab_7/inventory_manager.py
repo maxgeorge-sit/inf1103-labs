@@ -170,6 +170,23 @@ class Inventory:
 
 # ---------- File handling ----------
 
+def create_product(record):
+    # The "type" saved with each record says which subclass to rebuild.
+    if record["type"] == "physical":
+        return PhysicalProduct(
+            record["id"], record["name"], record["price"], record["stock"],
+            record["weight"],
+        )
+
+    if record["type"] == "digital":
+        return DigitalProduct(
+            record["id"], record["name"], record["price"], record["stock"],
+            record["download_size"],
+        )
+
+    raise ValueError(f"Unknown product type: {record['type']}")
+
+
 def load_inventory(inventory):
     if not os.path.exists(INVENTORY_FILE):
         print(f"{INVENTORY_FILE} not found. Starting with an empty inventory.")
@@ -188,12 +205,13 @@ def load_inventory(inventory):
         print(f"{INVENTORY_FILE} has an unexpected format. Starting with an empty inventory.")
         return
 
-    # Each saved dictionary becomes a Product object. A record the Product
-    # rejects (missing field, negative stock, ...) or a duplicate ID is skipped.
+    # Each saved dictionary becomes a PhysicalProduct or DigitalProduct.
+    # A record that is rejected (missing field, unknown type, negative
+    # stock, ...) or has a duplicate ID is skipped.
     skipped = 0
     for item in data:
         try:
-            product = Product(item["id"], item["name"], item["price"], item["stock"])
+            product = create_product(item)
         except (KeyError, TypeError, ValueError):
             skipped += 1
             continue
@@ -212,12 +230,23 @@ def save_inventory(inventory):
     # Each Product becomes a dictionary again as JSON cannot store objects.
     data = []
     for product in inventory.get_products():
-        data.append({
+        record = {
             "id": product.get_product_id(),
             "name": product.get_name(),
             "price": product.get_price(),
             "stock": product.get_stock(),
-        })
+        }
+
+        # Add the type label, used when loading, and the extra field
+        # that only this kind of product has.
+        if isinstance(product, PhysicalProduct):
+            record["type"] = "physical"
+            record["weight"] = product.get_weight()
+        elif isinstance(product, DigitalProduct):
+            record["type"] = "digital"
+            record["download_size"] = product.get_download_size()
+
+        data.append(record)
 
     try:
         with open(INVENTORY_FILE, "w") as file:
@@ -273,6 +302,30 @@ def parse_price(entry):
     return price
 
 
+def parse_product_type(entry):
+    choice = entry.lower()
+
+    if choice in ("1", "physical"):
+        return "physical"
+
+    if choice in ("2", "digital"):
+        return "digital"
+
+    raise ValueError("Enter 1 for Physical or 2 for Digital.")
+
+
+def parse_positive_number(entry):
+    try:
+        number = float(entry)
+    except ValueError:
+        raise ValueError("Enter a number, e.g. 2.5.") from None
+
+    if not math.isfinite(number) or number <= 0:
+        raise ValueError("Enter a number greater than 0.")
+
+    return number
+
+
 def ask_until_valid(prompt, parser):
     while True:
         try:
@@ -296,6 +349,9 @@ def show_menu():
 
 def add_product_menu(inventory):
     print("\nAdd New Product")
+    product_type = ask_until_valid(
+        "Product Type (1 = Physical, 2 = Digital): ", parse_product_type
+    )
     product_id = ask_until_valid("Product ID: ", parse_text)
 
     if inventory.search_product(product_id) is not None:
@@ -306,7 +362,14 @@ def add_product_menu(inventory):
     price = ask_until_valid("Price: ", parse_price)
     stock = ask_until_valid("Stock Quantity: ", parse_stock)
 
-    product = Product(product_id, name, price, stock)
+    # Ask for the one extra detail this type needs, then create that subclass.
+    if product_type == "physical":
+        weight = ask_until_valid("Weight (kg): ", parse_positive_number)
+        product = PhysicalProduct(product_id, name, price, stock, weight)
+    else:
+        download_size = ask_until_valid("Download Size (MB): ", parse_positive_number)
+        product = DigitalProduct(product_id, name, price, stock, download_size)
+
     inventory.add_product(product)
     print("\nProduct added successfully!")
 
