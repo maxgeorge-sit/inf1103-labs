@@ -18,9 +18,25 @@
     {
         "id": "P003",
         "name": "Keyboard",
-        "price": 455.0,
+        "price": 45.0,
         "stock": 25,
         "type": "physical",
         "weight": 0.9
+    },
+    {
+        "id": "P004",
+        "name": "Monitor",
+        "price": 299.99,
+        "stock": 10,
+        "type": "physical",
+        "weight": 4.5
+    },
+    {
+        "id": "D001",
+        "name": "Photo Editor",
+        "price": 79.99,
+        "stock": 100,
+        "type": "digital",
+        "download_size": 850.0
     }
 ]
