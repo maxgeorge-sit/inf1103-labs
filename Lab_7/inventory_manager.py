@@ -68,6 +68,43 @@ class Product:
         )
 
 
+# ---------- Shared check for product subclasses ----------
+
+def check_positive_number(value, label):
+    # Used by each subclass to check the extra number it adds.
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError(f"{label} must be a number.")
+
+    if not math.isfinite(value) or value <= 0:
+        raise ValueError(f"{label} must be greater than 0.")
+
+    return float(value)
+
+
+# ---------- PhysicalProduct class ----------
+
+class PhysicalProduct(Product):
+    def __init__(self, product_id, name, price, stock, weight):
+        # super() runs Product's constructor, which checks and stores the
+        # ID, name, price and stock exactly as it does for any product.
+        super().__init__(product_id, name, price, stock)
+
+        # The attribute only physical products have: weight in kilograms.
+        self.__weight = check_positive_number(weight, "Weight")
+
+    def get_weight(self):
+        return self.__weight
+
+    def display_information(self):
+        # Product's attributes are private to Product, so this method
+        # reads them through the getters PhysicalProduct inherited.
+        print(f"ID: {self.get_product_id()}")
+        print(f"Name: {self.get_name()}")
+        print(f"Price: ${self.get_price():.2f}")
+        print(f"Stock: {self.get_stock()}")
+        print(f"Weight: {self.__weight:.2f} kg")
+
+
 # ---------- Inventory class ----------
 
 class Inventory:
