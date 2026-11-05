@@ -40,21 +40,21 @@ def test_physical_product():
     output = printed_by(guitar.display_information)
     print("guitar.display_information() prints:")
     print(output)
+    print("print(guitar) prints:")
+    print(guitar)
+    print()
 
     check(isinstance(guitar, Product), "a PhysicalProduct is-a Product")
     check(guitar.get_weight() == 3.5, "the weight is stored")
     check("Name: Guitar" in output, "the shared product details are displayed")
     check("Weight: 3.50 kg" in output, "the weight is displayed")
+    check("Weight: 3.50 kg" in str(guitar), "print(guitar) shows the weight too")
 
     try:
         PhysicalProduct("P006", "Broken Item", 1.00, 1, -2)
         check(False, "a negative weight is refused")
     except ValueError:
         check(True, "a negative weight is refused")
-
-    print()
-    print("print(guitar) uses the __str__ inherited from Product, so no weight yet:")
-    print(guitar)
 
 
 def test_digital_product():
@@ -64,21 +64,24 @@ def test_digital_product():
     output = printed_by(operating_system.display_information)
     print("operating_system.display_information() prints:")
     print(output)
+    print("print(operating_system) prints:")
+    print(operating_system)
+    print()
 
     check(isinstance(operating_system, Product), "a DigitalProduct is-a Product")
     check(operating_system.get_download_size() == 4500, "the download size is stored")
     check("Name: Operating System" in output, "the shared product details are displayed")
     check("Download Size: 4500.00 MB" in output, "the download size is displayed")
+    check(
+        "Download Size: 4500.00 MB" in str(operating_system),
+        "print(operating_system) shows the download size too",
+    )
 
     try:
         DigitalProduct("D003", "Empty Download", 1.00, 1, 0)
         check(False, "a download size of 0 is refused")
     except ValueError:
         check(True, "a download size of 0 is refused")
-
-    print()
-    print("print(operating_system) also uses Product's __str__, so no download size yet:")
-    print(operating_system)
 
 
 def main():

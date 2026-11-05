@@ -95,14 +95,15 @@ class PhysicalProduct(Product):
     def get_weight(self):
         return self.__weight
 
+    # Overrides Product's version: Product prints the ID, name, price and
+    # stock, then this method adds the one line that is new.
     def display_information(self):
-        # Product's attributes are private to Product, so this method
-        # reads them through the getters PhysicalProduct inherited.
-        print(f"ID: {self.get_product_id()}")
-        print(f"Name: {self.get_name()}")
-        print(f"Price: ${self.get_price():.2f}")
-        print(f"Stock: {self.get_stock()}")
+        super().display_information()
         print(f"Weight: {self.__weight:.2f} kg")
+
+    # The same idea for the one-line version that print(product) uses.
+    def __str__(self):
+        return f"{super().__str__()} | Weight: {self.__weight:.2f} kg"
 
 
 # ---------- DigitalProduct class ----------
@@ -118,12 +119,13 @@ class DigitalProduct(Product):
     def get_download_size(self):
         return self.__download_size
 
+    # Overrides both methods the same way PhysicalProduct does.
     def display_information(self):
-        print(f"ID: {self.get_product_id()}")
-        print(f"Name: {self.get_name()}")
-        print(f"Price: ${self.get_price():.2f}")
-        print(f"Stock: {self.get_stock()}")
+        super().display_information()
         print(f"Download Size: {self.__download_size:.2f} MB")
+
+    def __str__(self):
+        return f"{super().__str__()} | Download Size: {self.__download_size:.2f} MB"
 
 
 # ---------- Inventory class ----------
