@@ -94,6 +94,44 @@ def test_digital_product():
         check(True, "a download size of 0 is refused")
 
 
+def test_fulfilment_info():
+    show_heading("Both subclasses implement get_fulfilment_info()")
+    guitar = PhysicalProduct("P005", "Guitar", 350.00, 5, 3.5)
+    operating_system = DigitalProduct("D002", "Operating System", 139.99, 50, 4500)
+
+    print(f"Guitar: {guitar.get_fulfilment_info()}")
+    print(f"Operating System: {operating_system.get_fulfilment_info()}")
+    print()
+
+    check("shipping" in guitar.get_fulfilment_info(), "PhysicalProduct says it is shipped")
+    check(
+        "digitally" in operating_system.get_fulfilment_info(),
+        "DigitalProduct says it is delivered digitally",
+    )
+
+
+def test_abstract_product():
+    show_heading("The abstract Product class cannot be created directly")
+
+    try:
+        Product("X001", "Mystery Item", 10.00, 1)
+        check(False, "creating a Product directly is refused")
+    except TypeError as error:
+        print(f"TypeError: {error}")
+        print()
+        check(True, "creating a Product directly is refused")
+
+    # A subclass that leaves out the abstract method is refused as well.
+    class UnfinishedProduct(Product):
+        pass
+
+    try:
+        UnfinishedProduct("X002", "Unfinished Item", 10.00, 1)
+        check(False, "a subclass without get_fulfilment_info() is refused")
+    except TypeError:
+        check(True, "a subclass without get_fulfilment_info() is refused")
+
+
 def test_inventory_operations():
     show_heading("Inventory operations continue to work")
     inventory = Inventory()
@@ -161,6 +199,8 @@ def test_json_round_trip():
 def main():
     test_physical_product()
     test_digital_product()
+    test_fulfilment_info()
+    test_abstract_product()
     test_inventory_operations()
     test_json_round_trip()
 

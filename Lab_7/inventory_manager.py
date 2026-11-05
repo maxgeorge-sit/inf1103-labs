@@ -1,6 +1,7 @@
 import json
 import math
 import os
+from abc import ABC, abstractmethod
 
 INVENTORY_FILE = "inventory.json"
 DIVIDER = "-" * 48
@@ -8,7 +9,9 @@ DIVIDER = "-" * 48
 
 # ---------- Product class ----------
 
-class Product:
+# Product is abstract: it holds everything products share, but only its
+# subclasses (PhysicalProduct and DigitalProduct) can be created.
+class Product(ABC):
     def __init__(self, product_id, name, price, stock):
         if not isinstance(product_id, str) or not product_id.strip():
             raise ValueError("Product ID must be non-empty text.")
@@ -67,6 +70,12 @@ class Product:
             f"Price: ${self.__price:.2f} | Stock: {self.__stock}"
         )
 
+    # An abstract method names a behaviour without providing it. Every
+    # subclass must implement it, or that subclass cannot be created either.
+    @abstractmethod
+    def get_fulfilment_info(self):
+        pass
+
 
 # ---------- Shared check for product subclasses ----------
 
@@ -105,6 +114,9 @@ class PhysicalProduct(Product):
     def __str__(self):
         return f"{super().__str__()} | Weight: {self.__weight:.2f} kg"
 
+    def get_fulfilment_info(self):
+        return "This product requires physical shipping."
+
 
 # ---------- DigitalProduct class ----------
 
@@ -126,6 +138,9 @@ class DigitalProduct(Product):
 
     def __str__(self):
         return f"{super().__str__()} | Download Size: {self.__download_size:.2f} MB"
+
+    def get_fulfilment_info(self):
+        return "This product is delivered digitally as a download."
 
 
 # ---------- Inventory class ----------
@@ -406,6 +421,7 @@ def search_product_menu(inventory):
     print("\nProduct Found")
     print(DIVIDER)
     product.display_information()
+    print(f"Fulfilment: {product.get_fulfilment_info()}")
     print(DIVIDER)
 
 
