@@ -1,0 +1,530 @@
+import json
+import math
+import os
+from abc import ABC, abstractmethod
+
+INVENTORY_FILE = "inventory.json"
+DIVIDER = "-" * 48
+
+
+# ---------- Supplier class ----------
+
+# A supplier exists on its own: products refer to it (association), but a
+# supplier is not part of a product, and a product is not part of it.
+class Supplier:
+    def __init__(self, supplier_id: str, name: str, contact_email: str) -> None:
+        if not isinstance(supplier_id, str) or not supplier_id.strip():
+            raise ValueError("Supplier ID must be non-empty text.")
+
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError("Supplier name must be non-empty text.")
+
+        if not isinstance(contact_email, str):
+            raise ValueError("Contact email must be text.")
+
+        # An email address needs text on both sides of the @ sign.
+        user, at_sign, domain = contact_email.strip().partition("@")
+        if not user or not at_sign or not domain:
+            raise ValueError("Contact email must look like name@example.com.")
+
+        self.__supplier_id: str = supplier_id.strip().upper()
+        self.__name: str = name.strip()
+        self.__contact_email: str = contact_email.strip()
+
+    def get_supplier_id(self) -> str:
+        return self.__supplier_id
+
+    def get_name(self) -> str:
+        return self.__name
+
+    def get_contact_email(self) -> str:
+        return self.__contact_email
+
+    def display_information(self) -> None:
+        print(f"Supplier ID: {self.__supplier_id}")
+        print(f"Name: {self.__name}")
+        print(f"Contact Email: {self.__contact_email}")
+
+
+# ---------- Product class ----------
+class Product(ABC):
+    def __init__(self, product_id, name, price, stock):
+        if not isinstance(product_id, str) or not product_id.strip():
+            raise ValueError("Product ID must be non-empty text.")
+
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError("Product name must be non-empty text.")
+
+        if isinstance(price, bool) or not isinstance(price, (int, float)):
+            raise ValueError("Price must be a number.")
+
+        if not math.isfinite(price) or price < 0:
+            raise ValueError("Price must be 0 or more.")
+
+        self.__product_id = product_id.strip().upper()
+        self.__name = name.strip()
+        self.__price = float(price)
+
+        # Goes through update_stock() so the same stock rules apply here as well.
+        self.__stock = 0
+        self.update_stock(stock)
+
+    def get_product_id(self):
+        return self.__product_id
+
+    def get_name(self):
+        return self.__name
+
+    def get_price(self):
+        return self.__price
+
+    def get_stock(self):
+        return self.__stock
+
+    def update_stock(self, quantity):
+        # The Product checks the value before it changes its own stock.
+        # bool counts as int in Python, so True/False are rejected too.
+        if isinstance(quantity, bool) or not isinstance(quantity, int):
+            raise ValueError("Stock must be a whole number.")
+
+        if quantity < 0:
+            raise ValueError("Stock cannot be negative.")
+
+        self.__stock = quantity
+
+    def display_information(self):
+        print(f"ID: {self.__product_id}")
+        print(f"Name: {self.__name}")
+        print(f"Price: ${self.__price:.2f}")
+        print(f"Stock: {self.__stock}")
+
+    # __str__ is a public special
+    # method like __init__, not a private one. print(product) uses it.
+    def __str__(self):
+        return (
+            f"ID: {self.__product_id} | Name: {self.__name} | "
+            f"Price: ${self.__price:.2f} | Stock: {self.__stock}"
+        )
+
+    @abstractmethod
+    def get_fulfilment_info(self):
+        pass
+
+
+# ---------- CanBeShipped interface ----------
+
+class CanBeShipped(ABC):
+    @abstractmethod
+    def calculate_shipping_cost(self):
+        pass
+
+
+# ---------- Shared check for product subclasses ----------
+
+def check_positive_number(value, label):
+    # Used by each subclass to check the extra number it adds.
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError(f"{label} must be a number.")
+
+    if not math.isfinite(value) or value <= 0:
+        raise ValueError(f"{label} must be greater than 0.")
+
+    return float(value)
+
+
+# ---------- PhysicalProduct class ----------
+
+# One parent class (Product) plus one interface (CanBeShipped).
+class PhysicalProduct(Product, CanBeShipped):
+    def __init__(self, product_id, name, price, stock, weight):
+        # super() runs Product's constructor, which checks and stores the
+        # ID, name, price and stock exactly as it does for any product.
+        super().__init__(product_id, name, price, stock)
+
+        # The attribute only physical products have: weight in kilograms.
+        self.__weight = check_positive_number(weight, "Weight")
+
+    def get_weight(self):
+        return self.__weight
+
+    # Overrides Product's version: Product prints the ID, name, price and
+    # stock, then this method adds the one line that is new.
+    def display_information(self):
+        super().display_information()
+        print(f"Weight: {self.__weight:.2f} kg")
+
+    # The same idea for the one-line version that print(product) uses.
+    def __str__(self):
+        return f"{super().__str__()} | Weight: {self.__weight:.2f} kg"
+
+    def get_fulfilment_info(self):
+        return "This product requires physical shipping."
+
+    # Required by CanBeShipped. Simple rule: a $5.00 base fee plus $2.00 per kg.
+    def calculate_shipping_cost(self):
+        return 5.00 + 2.00 * self.__weight
+
+
+# ---------- DigitalProduct class ----------
+
+class DigitalProduct(Product):
+    def __init__(self, product_id, name, price, stock, download_size):
+        # Same pattern as PhysicalProduct: Product's constructor runs first.
+        super().__init__(product_id, name, price, stock)
+
+        # A digital product has no weight; it has a download size in megabytes.
+        self.__download_size = check_positive_number(download_size, "Download size")
+
+    def get_download_size(self):
+        return self.__download_size
+
+    # Overrides both methods the same way PhysicalProduct does.
+    def display_information(self):
+        super().display_information()
+        print(f"Download Size: {self.__download_size:.2f} MB")
+
+    def __str__(self):
+        return f"{super().__str__()} | Download Size: {self.__download_size:.2f} MB"
+
+    def get_fulfilment_info(self):
+        return "This product is delivered digitally as a download."
+
+
+# ---------- Inventory class ----------
+
+class Inventory:
+    def __init__(self):
+        self.__products = []
+
+    def add_product(self, product):
+        if self.search_product(product.get_product_id()) is not None:
+            return False
+
+        self.__products.append(product)
+        return True
+
+    def search_product(self, product_id):
+        product_id = product_id.strip().upper()
+
+        for product in self.__products:
+            if product.get_product_id() == product_id:
+                return product
+
+        return None
+
+    def display_all(self):
+        print("\nCurrent Inventory")
+        print(DIVIDER)
+
+        if not self.__products:
+            print("No products in inventory.")
+
+        for product in self.__products:
+            print(product)
+
+        print(DIVIDER)
+
+    # Returns a copy, so other code can read the products but cannot add 
+    # or remove any without going through the Inventory.
+    def get_products(self):
+        return list(self.__products)
+
+
+# ---------- File handling ----------
+
+def create_product(record):
+    # The "type" saved with each record says which subclass to rebuild.
+    if record["type"] == "physical":
+        return PhysicalProduct(
+            record["id"], record["name"], record["price"], record["stock"],
+            record["weight"],
+        )
+
+    if record["type"] == "digital":
+        return DigitalProduct(
+            record["id"], record["name"], record["price"], record["stock"],
+            record["download_size"],
+        )
+
+    raise ValueError(f"Unknown product type: {record['type']}")
+
+
+def load_inventory(inventory):
+    if not os.path.exists(INVENTORY_FILE):
+        print(f"{INVENTORY_FILE} not found. Starting with an empty inventory.")
+        return
+
+    print(f"{INVENTORY_FILE} found.")
+
+    try:
+        with open(INVENTORY_FILE, "r") as file:
+            data = json.load(file)
+    except (OSError, ValueError):
+        print(f"Could not read {INVENTORY_FILE}. Starting with an empty inventory.")
+        return
+
+    if not isinstance(data, list):
+        print(f"{INVENTORY_FILE} has an unexpected format. Starting with an empty inventory.")
+        return
+
+    # Each saved dictionary becomes a PhysicalProduct or DigitalProduct.
+    # A record that is rejected (missing field, unknown type, negative
+    # stock, ...) or has a duplicate ID is skipped.
+    skipped = 0
+    for item in data:
+        try:
+            product = create_product(item)
+        except (KeyError, TypeError, ValueError):
+            skipped += 1
+            continue
+
+        if not inventory.add_product(product):
+            skipped += 1
+
+    if skipped > 0:
+        print(f"Warning: Skipped {skipped} invalid or duplicate product record(s).")
+        print("They will be left out the next time the inventory is saved.")
+
+    print("Inventory loaded successfully.")
+
+
+def save_inventory(inventory):
+    # Each Product becomes a dictionary again as JSON cannot store objects.
+    data = []
+    for product in inventory.get_products():
+        record = {
+            "id": product.get_product_id(),
+            "name": product.get_name(),
+            "price": product.get_price(),
+            "stock": product.get_stock(),
+        }
+
+        # Add the type label, used when loading, and the extra field
+        # that only this kind of product has.
+        if isinstance(product, PhysicalProduct):
+            record["type"] = "physical"
+            record["weight"] = product.get_weight()
+        elif isinstance(product, DigitalProduct):
+            record["type"] = "digital"
+            record["download_size"] = product.get_download_size()
+
+        data.append(record)
+
+    try:
+        with open(INVENTORY_FILE, "w") as file:
+            json.dump(data, file, indent=4)
+    except OSError as error:
+        print(f"Error: Could not save inventory ({error}).")
+        return False
+
+    return True
+
+
+# ---------- Input validation ----------
+
+def parse_text(entry):
+    if not entry:
+        raise ValueError("This field cannot be empty.")
+
+    return entry
+
+
+def parse_stock(entry):
+    if entry.startswith(("-", "+")):
+        digits = entry[1:]
+    else:
+        digits = entry
+
+    if not digits.isdigit():
+        raise ValueError("Enter a whole number.")
+
+    try:
+        quantity = int(entry)
+    except ValueError:
+        raise ValueError("Enter a valid integer.") from None
+
+    if quantity < 0:
+        raise ValueError("Negative quantities are not allowed.")
+
+    return quantity
+
+
+def parse_price(entry):
+    try:
+        price = float(entry)
+    except ValueError:
+        raise ValueError("Enter a valid price, e.g. 299.99.") from None
+
+    if not math.isfinite(price):
+        raise ValueError("Enter a valid price, e.g. 299.99.")
+
+    if price < 0:
+        raise ValueError("Price cannot be negative.")
+
+    return price
+
+
+def parse_product_type(entry):
+    choice = entry.lower()
+
+    if choice in ("1", "physical"):
+        return "physical"
+
+    if choice in ("2", "digital"):
+        return "digital"
+
+    raise ValueError("Enter 1 for Physical or 2 for Digital.")
+
+
+def parse_positive_number(entry):
+    try:
+        number = float(entry)
+    except ValueError:
+        raise ValueError("Enter a number, e.g. 2.5.") from None
+
+    if not math.isfinite(number) or number <= 0:
+        raise ValueError("Enter a number greater than 0.")
+
+    return number
+
+
+def ask_until_valid(prompt, parser):
+    while True:
+        try:
+            return parser(input(prompt).strip())
+        except ValueError as error:
+            print(f"Error: {error}")
+
+
+# ---------- Main program ----------
+
+def show_menu():
+    print("----------- MENU -----------")
+    print("1. Display All Products")
+    print("2. Add Product")
+    print("3. Update Stock")
+    print("4. Search Product")
+    print("5. Save Inventory")
+    print("6. Exit")
+    print("----------------------------")
+
+
+def add_product_menu(inventory):
+    print("\nAdd New Product")
+    product_type = ask_until_valid(
+        "Product Type (1 = Physical, 2 = Digital): ", parse_product_type
+    )
+    product_id = ask_until_valid("Product ID: ", parse_text)
+
+    if inventory.search_product(product_id) is not None:
+        print(f"\nError: Product ID {product_id.upper()} already exists.")
+        return
+
+    name = ask_until_valid("Product Name: ", parse_text)
+    price = ask_until_valid("Price: ", parse_price)
+    stock = ask_until_valid("Stock Quantity: ", parse_stock)
+
+    # Ask for the one extra detail this type needs, then create that subclass.
+    if product_type == "physical":
+        weight = ask_until_valid("Weight (kg): ", parse_positive_number)
+        product = PhysicalProduct(product_id, name, price, stock, weight)
+    else:
+        download_size = ask_until_valid("Download Size (MB): ", parse_positive_number)
+        product = DigitalProduct(product_id, name, price, stock, download_size)
+
+    inventory.add_product(product)
+    print("\nProduct added successfully!")
+
+
+def update_stock_menu(inventory):
+    print("\nUpdate Stock")
+    product_id = ask_until_valid("Enter Product ID: ", parse_text)
+    product = inventory.search_product(product_id)
+
+    if product is None:
+        print("\nProduct not found.")
+        return
+
+    print("\nProduct Found:")
+    print(f"Name: {product.get_name()}")
+    print(f"Current Stock: {product.get_stock()}")
+
+    print()
+    new_stock = ask_until_valid("New Stock Quantity: ", parse_stock)
+
+    product.update_stock(new_stock)
+    print("\nStock updated successfully!")
+
+
+def search_product_menu(inventory):
+    print("\nSearch Product")
+    product_id = ask_until_valid("Enter Product ID: ", parse_text)
+    product = inventory.search_product(product_id)
+
+    if product is None:
+        print("\nProduct not found.")
+        return
+
+    print("\nProduct Found")
+    print(DIVIDER)
+    product.display_information()
+    print(f"Fulfilment: {product.get_fulfilment_info()}")
+
+    # Only products that sign CanBeShipped have a shipping cost.
+    if isinstance(product, CanBeShipped):
+        print(f"Shipping Cost: ${product.calculate_shipping_cost():.2f}")
+
+    print(DIVIDER)
+
+
+def run_menu(inventory):
+    while True:
+        print()
+        show_menu()
+        choice = input("\nEnter option: ").strip()
+
+        if choice == "1":
+            inventory.display_all()
+        elif choice == "2":
+            add_product_menu(inventory)
+        elif choice == "3":
+            update_stock_menu(inventory)
+        elif choice == "4":
+            search_product_menu(inventory)
+        elif choice == "5":
+            print("\nSaving inventory...")
+            if save_inventory(inventory):
+                print(f"Inventory saved successfully to {INVENTORY_FILE}.")
+        elif choice == "6":
+            print("\nSaving inventory before exit...")
+            if save_inventory(inventory):
+                print("Inventory saved successfully.")
+            else:
+                print("Warning: Your changes were NOT saved.")
+
+            print("\nThank you for using Inventory Management System.")
+            print("Program terminated.")
+            return
+        else:
+            print("\nInvalid option. Please enter a number from 1 to 6.")
+
+
+def main():
+    print("=" * 40)
+    print("INVENTORY MANAGEMENT SYSTEM")
+    print("=" * 40)
+    print()
+
+    inventory = Inventory()
+    load_inventory(inventory)
+
+    # Ctrl+C, or input that ends early,
+    # stops the program with a message instead of a traceback.
+    try:
+        run_menu(inventory)
+    except (KeyboardInterrupt, EOFError):
+        print("\n\nProgram stopped. Changes since the last save were not saved.")
+
+
+if __name__ == "__main__":
+    main()
