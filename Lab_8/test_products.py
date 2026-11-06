@@ -1,9 +1,11 @@
 import contextlib
+import inspect
 import io
 import os
 import tempfile
 import weakref
 
+import inventory_manager
 from inventory_manager import (
     INVENTORY_FILE,
     CanBeShipped,
@@ -381,6 +383,57 @@ def test_composition():
         check(True, "a quantity of 0 is refused")
 
 
+def missing_hints(name: str, function) -> list[str]:
+    # Lists the parameters, and the return value, of a function that have no type hint.
+    signature = inspect.signature(function)
+    missing = [
+        f"{name}({parameter.name})"
+        for parameter in signature.parameters.values()
+        if parameter.name != "self" and parameter.annotation is inspect.Parameter.empty
+    ]
+    if signature.return_annotation is inspect.Signature.empty:
+        missing.append(f"{name} (return)")
+    return missing
+
+
+def test_type_hints():
+    show_heading("Type hints are present on every method and function")
+
+    print("Some of the signatures, as Python reads them:")
+    for function in [
+        Supplier.__init__,
+        Product.get_supplier,
+        Inventory.remove_product,
+        Inventory.find_product,
+        Order.add_order_line,
+        OrderLine.calculate_subtotal,
+    ]:
+        signature = str(inspect.signature(function)).replace("inventory_manager.", "")
+        print(f"  {function.__qualname__}{signature}")
+    print()
+
+    missing = []
+    for name, function in inspect.getmembers(inventory_manager, inspect.isfunction):
+        if function.__module__ == "inventory_manager":
+            missing += missing_hints(name, function)
+
+    for class_name, cls in inspect.getmembers(inventory_manager, inspect.isclass):
+        if cls.__module__ == "inventory_manager":
+            for method_name, method in vars(cls).items():
+                if inspect.isfunction(method):
+                    missing += missing_hints(f"{class_name}.{method_name}", method)
+
+    check(
+        not missing,
+        f"every parameter and return value in inventory_manager.py has a type hint "
+        f"(missing: {', '.join(missing) or 'none'})",
+    )
+    check(
+        inspect.signature(Inventory.find_product).return_annotation == (Product | None),
+        "find_product() promises to return a Product or None",
+    )
+
+
 def test_json_round_trip():
     show_heading("JSON saving and loading keep each product's type")
     inventory = Inventory()
@@ -437,6 +490,7 @@ def main():
     test_inventory_operations()
     test_aggregation()
     test_composition()
+    test_type_hints()
     test_json_round_trip()
 
     passed = results.count(True)

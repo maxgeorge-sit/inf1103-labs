@@ -2,9 +2,16 @@ import json
 import math
 import os
 from abc import ABC, abstractmethod
+from collections.abc import Callable
+from typing import TypeVar
 
 INVENTORY_FILE = "inventory.json"
 DIVIDER = "-" * 48
+
+# The shapes of the records saved in inventory.json: a supplier's details,
+# and a product's details with its supplier's record inside.
+SupplierRecord = dict[str, str]
+ProductRecord = dict[str, str | float | int | SupplierRecord]
 
 
 # ---------- Supplier class ----------
@@ -46,7 +53,7 @@ class Supplier:
         print(f"Contact Email: {self.__contact_email}")
 
     # The supplier's details as they are saved in inventory.json.
-    def to_dict(self) -> dict[str, str]:
+    def to_dict(self) -> SupplierRecord:
         return {
             "supplier_id": self.__supplier_id,
             "name": self.__name,
@@ -75,31 +82,31 @@ class Product(ABC):
         if not isinstance(supplier, Supplier):
             raise ValueError("Supplier must be a Supplier object.")
 
-        self.__product_id = product_id.strip().upper()
-        self.__name = name.strip()
-        self.__price = float(price)
+        self.__product_id: str = product_id.strip().upper()
+        self.__name: str = name.strip()
+        self.__price: float = float(price)
         self.__supplier: Supplier = supplier
 
         # Goes through update_stock() so the same stock rules apply here as well.
-        self.__stock = 0
+        self.__stock: int = 0
         self.update_stock(stock)
 
-    def get_product_id(self):
+    def get_product_id(self) -> str:
         return self.__product_id
 
-    def get_name(self):
+    def get_name(self) -> str:
         return self.__name
 
-    def get_price(self):
+    def get_price(self) -> float:
         return self.__price
 
-    def get_stock(self):
+    def get_stock(self) -> int:
         return self.__stock
 
     def get_supplier(self) -> Supplier:
         return self.__supplier
 
-    def update_stock(self, quantity):
+    def update_stock(self, quantity: int) -> None:
         # The Product checks the value before it changes its own stock.
         # bool counts as int in Python, so True/False are rejected too.
         if isinstance(quantity, bool) or not isinstance(quantity, int):
@@ -110,7 +117,7 @@ class Product(ABC):
 
         self.__stock = quantity
 
-    def display_information(self):
+    def display_information(self) -> None:
         print(f"ID: {self.__product_id}")
         print(f"Name: {self.__name}")
         print(f"Price: ${self.__price:.2f}")
@@ -122,14 +129,14 @@ class Product(ABC):
 
     # __str__ is a public special
     # method like __init__, not a private one. print(product) uses it.
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             f"ID: {self.__product_id} | Name: {self.__name} | "
             f"Price: ${self.__price:.2f} | Stock: {self.__stock}"
         )
 
     @abstractmethod
-    def get_fulfilment_info(self):
+    def get_fulfilment_info(self) -> str:
         pass
 
 
@@ -137,13 +144,13 @@ class Product(ABC):
 
 class CanBeShipped(ABC):
     @abstractmethod
-    def calculate_shipping_cost(self):
+    def calculate_shipping_cost(self) -> float:
         pass
 
 
 # ---------- Shared check for product subclasses ----------
 
-def check_positive_number(value, label):
+def check_positive_number(value: float, label: str) -> float:
     # Used by each subclass to check the extra number it adds.
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise ValueError(f"{label} must be a number.")
@@ -165,26 +172,26 @@ class PhysicalProduct(Product, CanBeShipped):
         super().__init__(product_id, name, price, stock, supplier)
 
         # The attribute only physical products have: weight in kilograms.
-        self.__weight = check_positive_number(weight, "Weight")
+        self.__weight: float = check_positive_number(weight, "Weight")
 
-    def get_weight(self):
+    def get_weight(self) -> float:
         return self.__weight
 
     # Overrides Product's version: Product prints the ID, name, price,
     # stock and supplier, then this method adds the one line that is new.
-    def display_information(self):
+    def display_information(self) -> None:
         super().display_information()
         print(f"Weight: {self.__weight:.2f} kg")
 
     # The same idea for the one-line version that print(product) uses.
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{super().__str__()} | Weight: {self.__weight:.2f} kg"
 
-    def get_fulfilment_info(self):
+    def get_fulfilment_info(self) -> str:
         return "This product requires physical shipping."
 
     # Required by CanBeShipped. Simple rule: a $5.00 base fee plus $2.00 per kg.
-    def calculate_shipping_cost(self):
+    def calculate_shipping_cost(self) -> float:
         return 5.00 + 2.00 * self.__weight
 
 
@@ -197,20 +204,20 @@ class DigitalProduct(Product):
         super().__init__(product_id, name, price, stock, supplier)
 
         # A digital product has no weight; it has a download size in megabytes.
-        self.__download_size = check_positive_number(download_size, "Download size")
+        self.__download_size: float = check_positive_number(download_size, "Download size")
 
-    def get_download_size(self):
+    def get_download_size(self) -> float:
         return self.__download_size
 
     # Overrides both methods the same way PhysicalProduct does.
-    def display_information(self):
+    def display_information(self) -> None:
         super().display_information()
         print(f"Download Size: {self.__download_size:.2f} MB")
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{super().__str__()} | Download Size: {self.__download_size:.2f} MB"
 
-    def get_fulfilment_info(self):
+    def get_fulfilment_info(self) -> str:
         return "This product is delivered digitally as a download."
 
 
@@ -358,7 +365,7 @@ class Order:
 
 # ---------- File handling ----------
 
-def create_supplier(record, suppliers):
+def create_supplier(record: SupplierRecord, suppliers: dict[str, Supplier]) -> Supplier:
     # Products saved with the same supplier ID get one shared Supplier
     # object, so the association is rebuilt exactly as it was saved.
     supplier = Supplier(record["supplier_id"], record["name"], record["contact_email"])
@@ -371,7 +378,7 @@ def create_supplier(record, suppliers):
     return supplier
 
 
-def create_product(record, suppliers):
+def create_product(record: ProductRecord, suppliers: dict[str, Supplier]) -> Product:
     supplier = create_supplier(record["supplier"], suppliers)
 
     # The "type" saved with each record says which subclass to rebuild.
@@ -390,7 +397,7 @@ def create_product(record, suppliers):
     raise ValueError(f"Unknown product type: {record['type']}")
 
 
-def load_inventory(inventory):
+def load_inventory(inventory: Inventory) -> None:
     if not os.path.exists(INVENTORY_FILE):
         print(f"{INVENTORY_FILE} not found. Starting with an empty inventory.")
         return
@@ -413,7 +420,7 @@ def load_inventory(inventory):
     # stock, ...) or has a duplicate ID is skipped.
     skipped = 0
     # The suppliers met so far, by ID, so products can share them.
-    suppliers = {}
+    suppliers: dict[str, Supplier] = {}
     for item in data:
         try:
             product = create_product(item, suppliers)
@@ -431,11 +438,11 @@ def load_inventory(inventory):
     print("Inventory loaded successfully.")
 
 
-def save_inventory(inventory):
+def save_inventory(inventory: Inventory) -> bool:
     # Each Product becomes a dictionary again as JSON cannot store objects.
-    data = []
+    data: list[ProductRecord] = []
     for product in inventory.get_products():
-        record = {
+        record: ProductRecord = {
             "id": product.get_product_id(),
             "name": product.get_name(),
             "price": product.get_price(),
@@ -466,14 +473,14 @@ def save_inventory(inventory):
 
 # ---------- Input validation ----------
 
-def parse_text(entry):
+def parse_text(entry: str) -> str:
     if not entry:
         raise ValueError("This field cannot be empty.")
 
     return entry
 
 
-def parse_stock(entry):
+def parse_stock(entry: str) -> int:
     if entry.startswith(("-", "+")):
         digits = entry[1:]
     else:
@@ -493,7 +500,7 @@ def parse_stock(entry):
     return quantity
 
 
-def parse_price(entry):
+def parse_price(entry: str) -> float:
     try:
         price = float(entry)
     except ValueError:
@@ -508,7 +515,7 @@ def parse_price(entry):
     return price
 
 
-def parse_product_type(entry):
+def parse_product_type(entry: str) -> str:
     choice = entry.lower()
 
     if choice in ("1", "physical"):
@@ -520,7 +527,7 @@ def parse_product_type(entry):
     raise ValueError("Enter 1 for Physical or 2 for Digital.")
 
 
-def parse_positive_number(entry):
+def parse_positive_number(entry: str) -> float:
     try:
         number = float(entry)
     except ValueError:
@@ -532,7 +539,7 @@ def parse_positive_number(entry):
     return number
 
 
-def parse_email(entry):
+def parse_email(entry: str) -> str:
     # An email address needs text on both sides of the @ sign.
     user, at_sign, domain = entry.partition("@")
     if not user or not at_sign or not domain:
@@ -541,7 +548,12 @@ def parse_email(entry):
     return entry
 
 
-def ask_until_valid(prompt, parser):
+# T stands for whatever type the parser returns, so ask_until_valid() returns
+# that same type: a str from parse_text(), an int from parse_stock(), and so on.
+T = TypeVar("T")
+
+
+def ask_until_valid(prompt: str, parser: Callable[[str], T]) -> T:
     while True:
         try:
             return parser(input(prompt).strip())
@@ -551,7 +563,7 @@ def ask_until_valid(prompt, parser):
 
 # ---------- Main program ----------
 
-def show_menu():
+def show_menu() -> None:
     print("----------- MENU -----------")
     print("1. Display All Products")
     print("2. Add Product")
@@ -562,7 +574,7 @@ def show_menu():
     print("----------------------------")
 
 
-def find_supplier(inventory, supplier_id):
+def find_supplier(inventory: Inventory, supplier_id: str) -> Supplier | None:
     # Suppliers are reached through the products that refer to them.
     supplier_id = supplier_id.strip().upper()
 
@@ -574,7 +586,7 @@ def find_supplier(inventory, supplier_id):
     return None
 
 
-def choose_supplier(inventory):
+def choose_supplier(inventory: Inventory) -> Supplier:
     # Reuses a supplier the inventory already knows, or creates a new one.
     supplier_id = ask_until_valid("Supplier ID: ", parse_text)
     supplier = find_supplier(inventory, supplier_id)
@@ -588,7 +600,7 @@ def choose_supplier(inventory):
     return Supplier(supplier_id, name, contact_email)
 
 
-def add_product_menu(inventory):
+def add_product_menu(inventory: Inventory) -> None:
     print("\nAdd New Product")
     product_type = ask_until_valid(
         "Product Type (1 = Physical, 2 = Digital): ", parse_product_type
@@ -616,7 +628,7 @@ def add_product_menu(inventory):
     print("\nProduct added successfully!")
 
 
-def update_stock_menu(inventory):
+def update_stock_menu(inventory: Inventory) -> None:
     print("\nUpdate Stock")
     product_id = ask_until_valid("Enter Product ID: ", parse_text)
     product = inventory.find_product(product_id)
@@ -636,7 +648,7 @@ def update_stock_menu(inventory):
     print("\nStock updated successfully!")
 
 
-def search_product_menu(inventory):
+def search_product_menu(inventory: Inventory) -> None:
     print("\nSearch Product")
     product_id = ask_until_valid("Enter Product ID: ", parse_text)
     product = inventory.find_product(product_id)
@@ -657,7 +669,7 @@ def search_product_menu(inventory):
     print(DIVIDER)
 
 
-def run_menu(inventory):
+def run_menu(inventory: Inventory) -> None:
     while True:
         print()
         show_menu()
@@ -689,7 +701,7 @@ def run_menu(inventory):
             print("\nInvalid option. Please enter a number from 1 to 6.")
 
 
-def main():
+def main() -> None:
     print("=" * 40)
     print("INVENTORY MANAGEMENT SYSTEM")
     print("=" * 40)
