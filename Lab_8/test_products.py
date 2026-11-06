@@ -2,23 +2,32 @@ import contextlib
 import inspect
 import io
 import os
+import re
 import tempfile
 import weakref
 
 import inventory_manager
-from inventory_manager import (
-    INVENTORY_FILE,
+from can_be_shipped import CanBeShipped
+from digital_product import DigitalProduct
+from inventory import Inventory
+from inventory_manager import INVENTORY_FILE, load_inventory, save_inventory
+from order import Order
+from order_line import OrderLine
+from physical_product import PhysicalProduct
+from product import Product
+from supplier import Supplier
+
+# Every class in the project. Each one lives in its own file.
+PROJECT_CLASSES = [
+    Supplier,
+    Product,
     CanBeShipped,
+    PhysicalProduct,
     DigitalProduct,
     Inventory,
-    Order,
     OrderLine,
-    PhysicalProduct,
-    Product,
-    Supplier,
-    load_inventory,
-    save_inventory,
-)
+    Order,
+]
 
 results = []
 
@@ -409,30 +418,57 @@ def test_type_hints():
         Order.add_order_line,
         OrderLine.calculate_subtotal,
     ]:
-        signature = str(inspect.signature(function)).replace("inventory_manager.", "")
+        # Drops the file names Python adds, so "product.Product" reads "Product".
+        signature = re.sub(r"\b\w+\.(?=[A-Z])", "", str(inspect.signature(function)))
         print(f"  {function.__qualname__}{signature}")
     print()
 
+    # Every file in the project: one per class, plus inventory_manager.py.
+    modules = [inspect.getmodule(cls) for cls in PROJECT_CLASSES] + [inventory_manager]
     missing = []
-    for name, function in inspect.getmembers(inventory_manager, inspect.isfunction):
-        if function.__module__ == "inventory_manager":
-            missing += missing_hints(name, function)
+    for module in modules:
+        for name, function in inspect.getmembers(module, inspect.isfunction):
+            if function.__module__ == module.__name__:
+                missing += missing_hints(name, function)
 
-    for class_name, cls in inspect.getmembers(inventory_manager, inspect.isclass):
-        if cls.__module__ == "inventory_manager":
-            for method_name, method in vars(cls).items():
-                if inspect.isfunction(method):
-                    missing += missing_hints(f"{class_name}.{method_name}", method)
+        for class_name, cls in inspect.getmembers(module, inspect.isclass):
+            if cls.__module__ == module.__name__:
+                for method_name, method in vars(cls).items():
+                    if inspect.isfunction(method):
+                        missing += missing_hints(f"{class_name}.{method_name}", method)
 
     check(
         not missing,
-        f"every parameter and return value in inventory_manager.py has a type hint "
+        f"every parameter and return value in every file has a type hint "
         f"(missing: {', '.join(missing) or 'none'})",
     )
     check(
         inspect.signature(Inventory.find_product).return_annotation == (Product | None),
         "find_product() promises to return a Product or None",
     )
+
+
+def test_one_class_per_file():
+    show_heading("Every class has its own file")
+
+    for cls in PROJECT_CLASSES:
+        module = inspect.getmodule(cls)
+        defined_here = [
+            name
+            for name, member in inspect.getmembers(module, inspect.isclass)
+            if member.__module__ == module.__name__
+        ]
+        check(
+            defined_here == [cls.__name__],
+            f"{cls.__name__} is the only class in {module.__name__}.py",
+        )
+
+    leftover = [
+        name
+        for name, member in inspect.getmembers(inventory_manager, inspect.isclass)
+        if member.__module__ == "inventory_manager"
+    ]
+    check(not leftover, "inventory_manager.py holds the program around the classes, not classes")
 
 
 def show_product_details(product: Product) -> None:
@@ -582,6 +618,7 @@ def main():
     test_aggregation()
     test_composition()
     test_type_hints()
+    test_one_class_per_file()
     test_liskov_substitution()
     test_polymorphism()
     test_json_round_trip()
