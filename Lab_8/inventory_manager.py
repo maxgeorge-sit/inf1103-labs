@@ -556,6 +556,16 @@ def parse_email(entry: str) -> str:
     return entry
 
 
+def parse_quantity(entry: str) -> int:
+    # An order needs at least 1 of a product.
+    quantity = parse_stock(entry)
+
+    if quantity < 1:
+        raise ValueError("Quantity must be at least 1.")
+
+    return quantity
+
+
 # T stands for whatever type the parser returns, so ask_until_valid() returns
 # that same type: a str from parse_text(), an int from parse_stock(), and so on.
 T = TypeVar("T")
@@ -577,8 +587,10 @@ def show_menu() -> None:
     print("2. Add Product")
     print("3. Update Stock")
     print("4. Search Product")
-    print("5. Save Inventory")
-    print("6. Exit")
+    print("5. Remove Product")
+    print("6. Create Order")
+    print("7. Save Inventory")
+    print("8. Exit")
     print("----------------------------")
 
 
@@ -677,6 +689,49 @@ def search_product_menu(inventory: Inventory) -> None:
     print(DIVIDER)
 
 
+def remove_product_menu(inventory: Inventory) -> None:
+    print("\nRemove Product")
+    product_id = ask_until_valid("Enter Product ID: ", parse_text)
+    product = inventory.remove_product(product_id)
+
+    if product is None:
+        print("\nProduct not found.")
+        return
+
+    # Only the inventory's reference is gone: the Product object itself is intact.
+    print(f"\n{product.get_name()} ({product.get_product_id()}) was removed from the inventory.")
+
+
+def create_order_menu(inventory: Inventory) -> None:
+    print("\nCreate Order")
+    order = Order(ask_until_valid("Order ID: ", parse_text))
+    print("Enter a Product ID to add it to the order, or press Enter to finish.")
+
+    while True:
+        product_id = input("Product ID: ").strip()
+        if not product_id:
+            break
+
+        product = inventory.find_product(product_id)
+        if product is None:
+            print("Product not found.")
+            continue
+
+        quantity = ask_until_valid("Quantity: ", parse_quantity)
+        # The Order creates the OrderLine: this menu never makes one itself.
+        order.add_order_line(product, quantity)
+        print(f"Added {quantity} x {product.get_name()}.")
+
+    if not order.get_order_lines():
+        print("\nNo products were added, so no order was created.")
+        return
+
+    print()
+    order.display_information()
+    # When this function ends, the Order and its OrderLines go with it.
+    # The products stay in the inventory.
+
+
 def run_menu(inventory: Inventory) -> None:
     while True:
         print()
@@ -692,10 +747,14 @@ def run_menu(inventory: Inventory) -> None:
         elif choice == "4":
             search_product_menu(inventory)
         elif choice == "5":
+            remove_product_menu(inventory)
+        elif choice == "6":
+            create_order_menu(inventory)
+        elif choice == "7":
             print("\nSaving inventory...")
             if save_inventory(inventory):
                 print(f"Inventory saved successfully to {INVENTORY_FILE}.")
-        elif choice == "6":
+        elif choice == "8":
             print("\nSaving inventory before exit...")
             if save_inventory(inventory):
                 print("Inventory saved successfully.")
@@ -706,7 +765,7 @@ def run_menu(inventory: Inventory) -> None:
             print("Program terminated.")
             return
         else:
-            print("\nInvalid option. Please enter a number from 1 to 6.")
+            print("\nInvalid option. Please enter a number from 1 to 8.")
 
 
 def main() -> None:
