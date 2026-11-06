@@ -42,9 +42,14 @@ def printed_by(method):
     return buffer.getvalue()
 
 
+def make_supplier() -> Supplier:
+    # A new Supplier for a test to use.
+    return Supplier("S001", "Acme Components", "sales@acme.example.com")
+
+
 def test_physical_product():
     show_heading("Physical products store and display their weight")
-    guitar = PhysicalProduct("P005", "Guitar", 350.00, 5, 3.5)
+    guitar = PhysicalProduct("P005", "Guitar", 350.00, 5, make_supplier(), 3.5)
 
     output = printed_by(guitar.display_information)
     print("guitar.display_information() prints:")
@@ -60,7 +65,7 @@ def test_physical_product():
     check("Weight: 3.50 kg" in str(guitar), "print(guitar) shows the weight too")
 
     try:
-        PhysicalProduct("P006", "Broken Item", 1.00, 1, -2)
+        PhysicalProduct("P006", "Broken Item", 1.00, 1, make_supplier(), -2)
         check(False, "a negative weight is refused")
     except ValueError:
         check(True, "a negative weight is refused")
@@ -68,7 +73,7 @@ def test_physical_product():
 
 def test_digital_product():
     show_heading("Digital products store and display their download size")
-    operating_system = DigitalProduct("D002", "Operating System", 139.99, 50, 4500)
+    operating_system = DigitalProduct("D002", "Operating System", 139.99, 50, make_supplier(), 4500)
 
     output = printed_by(operating_system.display_information)
     print("operating_system.display_information() prints:")
@@ -87,7 +92,7 @@ def test_digital_product():
     )
 
     try:
-        DigitalProduct("D003", "Empty Download", 1.00, 1, 0)
+        DigitalProduct("D003", "Empty Download", 1.00, 1, make_supplier(), 0)
         check(False, "a download size of 0 is refused")
     except ValueError:
         check(True, "a download size of 0 is refused")
@@ -95,8 +100,8 @@ def test_digital_product():
 
 def test_fulfilment_info():
     show_heading("Both subclasses implement get_fulfilment_info()")
-    guitar = PhysicalProduct("P005", "Guitar", 350.00, 5, 3.5)
-    operating_system = DigitalProduct("D002", "Operating System", 139.99, 50, 4500)
+    guitar = PhysicalProduct("P005", "Guitar", 350.00, 5, make_supplier(), 3.5)
+    operating_system = DigitalProduct("D002", "Operating System", 139.99, 50, make_supplier(), 4500)
 
     print(f"Guitar: {guitar.get_fulfilment_info()}")
     print(f"Operating System: {operating_system.get_fulfilment_info()}")
@@ -113,7 +118,7 @@ def test_abstract_product():
     show_heading("The abstract Product class cannot be created directly")
 
     try:
-        Product("X001", "Mystery Item", 10.00, 1)
+        Product("X001", "Mystery Item", 10.00, 1, make_supplier())
         check(False, "creating a Product directly is refused")
     except TypeError as error:
         print(f"TypeError: {error}")
@@ -125,7 +130,7 @@ def test_abstract_product():
         pass
 
     try:
-        UnfinishedProduct("X002", "Unfinished Item", 10.00, 1)
+        UnfinishedProduct("X002", "Unfinished Item", 10.00, 1, make_supplier())
         check(False, "a subclass without get_fulfilment_info() is refused")
     except TypeError:
         check(True, "a subclass without get_fulfilment_info() is refused")
@@ -137,7 +142,7 @@ def test_shipping_cost():
     print()
 
     for weight, expected in [(0.2, 5.40), (3.5, 12.00), (10.0, 25.00)]:
-        parcel = PhysicalProduct("P100", "Parcel", 10.00, 1, weight)
+        parcel = PhysicalProduct("P100", "Parcel", 10.00, 1, make_supplier(), weight)
         cost = parcel.calculate_shipping_cost()
         check(
             round(cost, 2) == expected,
@@ -157,8 +162,8 @@ def test_shipping_cost():
 
 def test_digital_not_shippable():
     show_heading("Digital products are not required to implement shipping")
-    guitar = PhysicalProduct("P005", "Guitar", 350.00, 5, 3.5)
-    operating_system = DigitalProduct("D002", "Operating System", 139.99, 50, 4500)
+    guitar = PhysicalProduct("P005", "Guitar", 350.00, 5, make_supplier(), 3.5)
+    operating_system = DigitalProduct("D002", "Operating System", 139.99, 50, make_supplier(), 4500)
 
     check(isinstance(guitar, CanBeShipped), "a PhysicalProduct signs CanBeShipped")
     check(
@@ -197,15 +202,65 @@ def test_supplier():
         check(True, "an email without an @ sign is refused")
 
 
+def test_association():
+    show_heading("Supplier and Product are associated, and exist independently")
+    supplier = Supplier("S001", "Acme Components", "sales@acme.example.com")
+    guitar = PhysicalProduct("P005", "Guitar", 350.00, 5, supplier, 3.5)
+    operating_system = DigitalProduct("D002", "Operating System", 139.99, 50, supplier, 4500)
+
+    for product in [guitar, operating_system]:
+        print(f"The supplier, reached through {product.get_name()}:")
+        product.get_supplier().display_information()
+        print()
+
+    check(guitar.get_supplier() is supplier, "the PhysicalProduct stores a reference to the Supplier")
+    check(
+        operating_system.get_supplier() is supplier,
+        "the DigitalProduct refers to the same Supplier object",
+    )
+    check(
+        "Supplier: Acme Components (S001)" in printed_by(guitar.display_information),
+        "a product's display_information() includes its supplier",
+    )
+    check(guitar is not supplier, "the Supplier and the Products are separate objects")
+
+    # Predict first: can each product still show its supplier after this line?
+    del supplier
+    print("After del supplier, the guitar can still reach its supplier:")
+    guitar.get_supplier().display_information()
+    print()
+    check(
+        guitar.get_supplier().get_name() == "Acme Components"
+        and operating_system.get_supplier().get_name() == "Acme Components",
+        "after del supplier, both products still reach the Supplier",
+    )
+
+    # Each side can exist without the other.
+    spare_supplier = Supplier("S009", "Spare Parts Co", "hello@spare.example.com")
+    check(spare_supplier.get_name() == "Spare Parts Co", "a Supplier can exist with no products")
+
+    del guitar
+    check(
+        operating_system.get_supplier().get_name() == "Acme Components",
+        "deleting a product does not delete its Supplier",
+    )
+
+    try:
+        PhysicalProduct("P006", "Desk", 120.00, 2, "Acme Components", 15)
+        check(False, "a supplier's name instead of a Supplier object is refused")
+    except ValueError:
+        check(True, "a supplier's name instead of a Supplier object is refused")
+
+
 def test_inventory_operations():
     show_heading("Inventory operations continue to work")
     inventory = Inventory()
-    guitar = PhysicalProduct("P005", "Guitar", 350.00, 5, 3.5)
-    operating_system = DigitalProduct("D002", "Operating System", 139.99, 50, 4500)
+    guitar = PhysicalProduct("P005", "Guitar", 350.00, 5, make_supplier(), 3.5)
+    operating_system = DigitalProduct("D002", "Operating System", 139.99, 50, make_supplier(), 4500)
 
     added_guitar = inventory.add_product(guitar)
     added_system = inventory.add_product(operating_system)
-    added_copy = inventory.add_product(DigitalProduct("p005", "Copy", 1.00, 1, 1))
+    added_copy = inventory.add_product(DigitalProduct("p005", "Copy", 1.00, 1, make_supplier(), 1))
     found = inventory.search_product("d002")
     if found is not None:
         found.update_stock(45)
@@ -227,8 +282,8 @@ def test_inventory_operations():
 def test_json_round_trip():
     show_heading("JSON saving and loading keep each product's type")
     inventory = Inventory()
-    inventory.add_product(PhysicalProduct("P005", "Guitar", 350.00, 5, 3.5))
-    inventory.add_product(DigitalProduct("D002", "Operating System", 139.99, 50, 4500))
+    inventory.add_product(PhysicalProduct("P005", "Guitar", 350.00, 5, make_supplier(), 3.5))
+    inventory.add_product(DigitalProduct("D002", "Operating System", 139.99, 50, make_supplier(), 4500))
     restored = Inventory()
 
     # Save and load inside a temporary folder, so your real
@@ -259,6 +314,13 @@ def test_json_round_trip():
         and operating_system.get_download_size() == 4500,
         "the operating system comes back as a DigitalProduct with its download size",
     )
+    check(
+        guitar is not None
+        and operating_system is not None
+        and guitar.get_supplier().get_name() == "Acme Components"
+        and guitar.get_supplier() is operating_system.get_supplier(),
+        "the supplier comes back too, as one Supplier shared by both products",
+    )
 
 
 def main():
@@ -269,6 +331,7 @@ def main():
     test_shipping_cost()
     test_digital_not_shippable()
     test_supplier()
+    test_association()
     test_inventory_operations()
     test_json_round_trip()
 
