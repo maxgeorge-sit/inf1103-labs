@@ -2,12 +2,15 @@ import contextlib
 import io
 import os
 import tempfile
+import weakref
 
 from inventory_manager import (
     INVENTORY_FILE,
     CanBeShipped,
     DigitalProduct,
     Inventory,
+    Order,
+    OrderLine,
     PhysicalProduct,
     Product,
     Supplier,
@@ -313,6 +316,71 @@ def test_aggregation():
     check(inventory_a.remove_product("P999") is None, "removing an unknown ID returns None")
 
 
+def test_composition():
+    show_heading("An Order creates and owns its OrderLines")
+    supplier = make_supplier()
+    guitar = PhysicalProduct("P005", "Guitar", 350.00, 5, supplier, 3.5)
+    operating_system = DigitalProduct("D002", "Operating System", 139.99, 50, supplier, 4500)
+
+    order = Order("O001")
+    order.add_order_line(guitar, 2)
+    order.add_order_line(operating_system, 1)
+
+    output = printed_by(order.display_information)
+    print(output)
+
+    first_line = order.get_order_lines()[0]
+    check(len(order.get_order_lines()) == 2, "add_order_line() created 2 OrderLines")
+    check(first_line.get_product() is guitar, "an OrderLine refers to the Product itself, not a copy")
+    check(
+        round(first_line.calculate_subtotal(), 2) == 700.00,
+        "a line's subtotal is price x quantity ($700.00)",
+    )
+    check(
+        round(order.calculate_total(), 2) == 839.99,
+        "the total adds up the lines' subtotals ($839.99)",
+    )
+    check("Total: $839.99" in output, "display_information() shows every line and the total")
+
+    order.get_order_lines().clear()
+    check(len(order.get_order_lines()) == 2, "only the Order can add or remove its lines")
+
+    # Predict first: the same Product in two Orders.
+    second_order = Order("O002")
+    second_order.add_order_line(guitar, 1)
+    second_line = second_order.get_order_lines()[0]
+    print(f"OrderLine in O001: id {id(first_line)}")
+    print(f"OrderLine in O002: id {id(second_line)}")
+    print(f"Product in each line: id {id(first_line.get_product())} and id {id(second_line.get_product())}")
+    print()
+    check(first_line is not second_line, "each Order made its own OrderLine (2 OrderLines)")
+    check(
+        first_line.get_product() is second_line.get_product(),
+        "both lines refer to the same Product (1 Product)",
+    )
+
+    # Remove a line through the Order.
+    check(order.remove_order_line("D002"), "remove_order_line() removes a line through the Order")
+    check(
+        round(order.calculate_total(), 2) == 700.00,
+        "the total updates after a line is removed ($700.00)",
+    )
+
+    # Remove the whole order: its lines go with it, the products stay.
+    # A weak reference watches an object without keeping it alive.
+    watched_line = weakref.ref(first_line)
+    del first_line
+    del order
+    check(watched_line() is None, "deleting the Order deletes its OrderLines too")
+    check(guitar.get_name() == "Guitar", "the Product is not deleted with the Order")
+
+    try:
+        Order("O003").add_order_line(guitar, 0)
+        check(False, "a quantity of 0 is refused")
+    except ValueError:
+        check(True, "a quantity of 0 is refused")
+
+
 def test_json_round_trip():
     show_heading("JSON saving and loading keep each product's type")
     inventory = Inventory()
@@ -368,6 +436,7 @@ def main():
     test_association()
     test_inventory_operations()
     test_aggregation()
+    test_composition()
     test_json_round_trip()
 
     passed = results.count(True)
