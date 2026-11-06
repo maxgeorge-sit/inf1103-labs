@@ -216,18 +216,31 @@ class DigitalProduct(Product):
 
 # ---------- Inventory class ----------
 
+# An Inventory groups Product objects (aggregation). The products are made
+# elsewhere and handed in, and removing one does not destroy it.
 class Inventory:
-    def __init__(self):
-        self.__products = []
+    def __init__(self) -> None:
+        # Typed with the base class, so the list can hold any kind of Product.
+        self.__products: list[Product] = []
 
-    def add_product(self, product):
-        if self.search_product(product.get_product_id()) is not None:
+    def add_product(self, product: Product) -> bool:
+        if self.find_product(product.get_product_id()) is not None:
             return False
 
         self.__products.append(product)
         return True
 
-    def search_product(self, product_id):
+    def remove_product(self, product_id: str) -> Product | None:
+        # Takes the product out of this inventory and hands it back intact,
+        # so it can still be used, or added to another inventory.
+        product = self.find_product(product_id)
+
+        if product is not None:
+            self.__products.remove(product)
+
+        return product
+
+    def find_product(self, product_id: str) -> Product | None:
         product_id = product_id.strip().upper()
 
         for product in self.__products:
@@ -236,7 +249,7 @@ class Inventory:
 
         return None
 
-    def display_all(self):
+    def display_all(self) -> None:
         print("\nCurrent Inventory")
         print(DIVIDER)
 
@@ -250,7 +263,7 @@ class Inventory:
 
     # Returns a copy, so other code can read the products but cannot add 
     # or remove any without going through the Inventory.
-    def get_products(self):
+    def get_products(self) -> list[Product]:
         return list(self.__products)
 
 
@@ -493,7 +506,7 @@ def add_product_menu(inventory):
     )
     product_id = ask_until_valid("Product ID: ", parse_text)
 
-    if inventory.search_product(product_id) is not None:
+    if inventory.find_product(product_id) is not None:
         print(f"\nError: Product ID {product_id.upper()} already exists.")
         return
 
@@ -517,7 +530,7 @@ def add_product_menu(inventory):
 def update_stock_menu(inventory):
     print("\nUpdate Stock")
     product_id = ask_until_valid("Enter Product ID: ", parse_text)
-    product = inventory.search_product(product_id)
+    product = inventory.find_product(product_id)
 
     if product is None:
         print("\nProduct not found.")
@@ -537,7 +550,7 @@ def update_stock_menu(inventory):
 def search_product_menu(inventory):
     print("\nSearch Product")
     product_id = ask_until_valid("Enter Product ID: ", parse_text)
-    product = inventory.search_product(product_id)
+    product = inventory.find_product(product_id)
 
     if product is None:
         print("\nProduct not found.")

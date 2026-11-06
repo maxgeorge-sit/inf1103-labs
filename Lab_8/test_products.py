@@ -261,7 +261,7 @@ def test_inventory_operations():
     added_guitar = inventory.add_product(guitar)
     added_system = inventory.add_product(operating_system)
     added_copy = inventory.add_product(DigitalProduct("p005", "Copy", 1.00, 1, make_supplier(), 1))
-    found = inventory.search_product("d002")
+    found = inventory.find_product("d002")
     if found is not None:
         found.update_stock(45)
 
@@ -271,12 +271,46 @@ def test_inventory_operations():
     check(added_guitar, "a PhysicalProduct can be added")
     check(added_system, "a DigitalProduct can be added")
     check(not added_copy, "a duplicate ID is refused")
-    check(found is operating_system, "search finds a product by ID, ignoring case")
+    check(found is operating_system, "find_product() finds a product by ID, ignoring case")
     check(operating_system.get_stock() == 45, "update_stock() changes the stock")
     check(
         "Weight: 3.50 kg" in output and "Download Size: 4500.00 MB" in output,
         "display_all() shows each product's own extra detail",
     )
+
+
+def test_aggregation():
+    show_heading("Inventory aggregates Products: removing one does not destroy it")
+
+    # 1. The product exists before any inventory does.
+    lamp = PhysicalProduct("P007", "Desk Lamp", 35.00, 12, make_supplier(), 1.2)
+    inventory_a = Inventory()
+    inventory_b = Inventory()
+
+    # 2. Add it to Inventory A.
+    inventory_a.add_product(lamp)
+    check(inventory_a.find_product("P007") is lamp, "the product is added to Inventory A")
+
+    # 3. Remove it again. Predict first: does the product still work?
+    removed = inventory_a.remove_product("P007")
+    check(removed is lamp, "remove_product() hands back the same Product object")
+    check(inventory_a.find_product("P007") is None, "Inventory A no longer holds it")
+
+    lamp.update_stock(10)
+    print("The removed product still works:")
+    lamp.display_information()
+    print()
+    check(lamp.get_stock() == 10, "the removed product can still be used")
+
+    # 4. Add the same object to Inventory B.
+    inventory_b.add_product(lamp)
+    check(inventory_b.find_product("p007") is lamp, "the same object is now in Inventory B")
+
+    # 5. Empty Inventory B. The product is not destroyed.
+    inventory_b.remove_product("P007")
+    check(inventory_b.get_products() == [], "Inventory B is now empty")
+    check(lamp.get_name() == "Desk Lamp", "the product still exists after both inventories let go")
+    check(inventory_a.remove_product("P999") is None, "removing an unknown ID returns None")
 
 
 def test_json_round_trip():
@@ -302,8 +336,8 @@ def test_json_round_trip():
             os.chdir(original_folder)
     print()
 
-    guitar = restored.search_product("P005")
-    operating_system = restored.search_product("D002")
+    guitar = restored.find_product("P005")
+    operating_system = restored.find_product("D002")
     check(saved, "save_inventory() wrote the file")
     check(
         isinstance(guitar, PhysicalProduct) and guitar.get_weight() == 3.5,
@@ -333,6 +367,7 @@ def main():
     test_supplier()
     test_association()
     test_inventory_operations()
+    test_aggregation()
     test_json_round_trip()
 
     passed = results.count(True)
