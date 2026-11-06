@@ -39,11 +39,12 @@ def show_heading(title):
     print("=" * 60)
 
 
-def printed_by(method):
-    # Runs a method and returns the text it printed, so a check can read it.
+def printed_by(method, *arguments):
+    # Runs a method (with any arguments) and returns the text it printed,
+    # so a check can read it.
     buffer = io.StringIO()
     with contextlib.redirect_stdout(buffer):
-        method()
+        method(*arguments)
     return buffer.getvalue()
 
 
@@ -434,6 +435,96 @@ def test_type_hints():
     )
 
 
+def show_product_details(product: Product) -> None:
+    # Written for Product: it only uses behaviour every Product promises.
+    product.display_information()
+    print(product.get_fulfilment_info())
+
+
+def keeps_stock_rules(product: Product) -> bool:
+    # Product's promise for update_stock(): 0 or more is stored, and a
+    # negative number is refused without changing the stock.
+    try:
+        product.update_stock(0)
+        zero_stored = product.get_stock() == 0
+        product.update_stock(25)
+        value_stored = product.get_stock() == 25
+    except ValueError:
+        return False  # it refused an amount that Product accepts
+
+    try:
+        product.update_stock(-1)
+        return False  # it accepted an amount that Product refuses
+    except ValueError:
+        return zero_stored and value_stored and product.get_stock() == 25
+
+
+def test_liskov_substitution():
+    show_heading("Both subclasses can stand in for Product (LSP)")
+    supplier = make_supplier()
+    guitar = PhysicalProduct("P005", "Guitar", 350.00, 5, supplier, 3.5)
+    operating_system = DigitalProduct("D002", "Operating System", 139.99, 50, supplier, 4500)
+
+    for label, product in [("PhysicalProduct", guitar), ("DigitalProduct", operating_system)]:
+        output = printed_by(show_product_details, product)
+        print(f"show_product_details() with a {label}:")
+        print(output)
+        check(output.startswith("ID: "), f"show_product_details() works with a {label}, unchanged")
+        check(keeps_stock_rules(product), f"a {label} keeps Product's update_stock() rules")
+
+    inventory = Inventory()
+    added = inventory.add_product(guitar) and inventory.add_product(operating_system)
+    found = inventory.find_product("D002")
+    if found is not None:
+        found.update_stock(45)
+    check(
+        added and operating_system.get_stock() == 45,
+        "Inventory's normal operations work on both kinds of product",
+    )
+
+    # The teammate's proposal from section 6.3 of the brief.
+    class NoStockDigitalProduct(DigitalProduct):
+        def update_stock(self, quantity: int) -> None:
+            raise NotImplementedError("Digital products have no stock")
+
+    try:
+        NoStockDigitalProduct("D009", "Broken App", 9.99, 10, supplier, 100)
+        check(False, "a subclass that refuses update_stock() breaks code written for Product")
+    except NotImplementedError as error:
+        print(f"Creating a NoStockDigitalProduct fails with NotImplementedError: {error}")
+        print()
+        check(True, "a subclass that refuses update_stock() breaks code written for Product")
+
+
+def test_polymorphism():
+    show_heading("One loop over Product references runs each subclass's methods")
+    supplier = make_supplier()
+    inventory = Inventory()
+    inventory.add_product(PhysicalProduct("P005", "Guitar", 350.00, 5, supplier, 3.5))
+    inventory.add_product(DigitalProduct("D002", "Operating System", 139.99, 50, supplier, 4500))
+
+    # Predict first: what will each product print for get_fulfilment_info()?
+    printed = {}
+    for product in inventory.get_products():
+        # No isinstance() and no separate loops: each object runs its own version.
+        output = printed_by(product.display_information)
+        fulfilment = product.get_fulfilment_info()
+        print(output + fulfilment)
+        print()
+        printed[product.get_product_id()] = output + fulfilment
+
+    guitar_text = printed.get("P005", "")
+    system_text = printed.get("D002", "")
+    check(
+        "Weight: 3.50 kg" in guitar_text and "physical shipping" in guitar_text,
+        "the guitar ran PhysicalProduct's display_information() and get_fulfilment_info()",
+    )
+    check(
+        "Download Size: 4500.00 MB" in system_text and "delivered digitally" in system_text,
+        "the operating system ran DigitalProduct's versions of both methods",
+    )
+
+
 def test_json_round_trip():
     show_heading("JSON saving and loading keep each product's type")
     inventory = Inventory()
@@ -491,6 +582,8 @@ def main():
     test_aggregation()
     test_composition()
     test_type_hints()
+    test_liskov_substitution()
+    test_polymorphism()
     test_json_round_trip()
 
     passed = results.count(True)

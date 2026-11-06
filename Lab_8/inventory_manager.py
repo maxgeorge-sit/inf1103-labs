@@ -135,6 +135,18 @@ class Product(ABC):
             f"Price: ${self.__price:.2f} | Stock: {self.__stock}"
         )
 
+    # The product's details as they are saved in inventory.json. Each
+    # subclass adds its own fields, so save_inventory() never has to ask
+    # which kind of product it has.
+    def to_dict(self) -> ProductRecord:
+        return {
+            "id": self.__product_id,
+            "name": self.__name,
+            "price": self.__price,
+            "stock": self.__stock,
+            "supplier": self.__supplier.to_dict(),
+        }
+
     @abstractmethod
     def get_fulfilment_info(self) -> str:
         pass
@@ -187,6 +199,12 @@ class PhysicalProduct(Product, CanBeShipped):
     def __str__(self) -> str:
         return f"{super().__str__()} | Weight: {self.__weight:.2f} kg"
 
+    def to_dict(self) -> ProductRecord:
+        record = super().to_dict()
+        record["type"] = "physical"
+        record["weight"] = self.__weight
+        return record
+
     def get_fulfilment_info(self) -> str:
         return "This product requires physical shipping."
 
@@ -216,6 +234,12 @@ class DigitalProduct(Product):
 
     def __str__(self) -> str:
         return f"{super().__str__()} | Download Size: {self.__download_size:.2f} MB"
+
+    def to_dict(self) -> ProductRecord:
+        record = super().to_dict()
+        record["type"] = "digital"
+        record["download_size"] = self.__download_size
+        return record
 
     def get_fulfilment_info(self) -> str:
         return "This product is delivered digitally as a download."
@@ -439,27 +463,11 @@ def load_inventory(inventory: Inventory) -> None:
 
 
 def save_inventory(inventory: Inventory) -> bool:
-    # Each Product becomes a dictionary again as JSON cannot store objects.
+    # Each Product turns itself into a dictionary, as JSON cannot store
+    # objects. Python runs the right to_dict() for each kind of product.
     data: list[ProductRecord] = []
     for product in inventory.get_products():
-        record: ProductRecord = {
-            "id": product.get_product_id(),
-            "name": product.get_name(),
-            "price": product.get_price(),
-            "stock": product.get_stock(),
-            "supplier": product.get_supplier().to_dict(),
-        }
-
-        # Add the type label, used when loading, and the extra field
-        # that only this kind of product has.
-        if isinstance(product, PhysicalProduct):
-            record["type"] = "physical"
-            record["weight"] = product.get_weight()
-        elif isinstance(product, DigitalProduct):
-            record["type"] = "digital"
-            record["download_size"] = product.get_download_size()
-
-        data.append(record)
+        data.append(product.to_dict())
 
     try:
         with open(INVENTORY_FILE, "w") as file:
