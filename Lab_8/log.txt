@@ -1,0 +1,233 @@
+commit 5049602a06a335968457829fc1dfaffd877891b6
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Sun Nov 8 12:01:18 2026 +0800
+
+    updated inventory.json
+
+commit 2dabf07488ad38b0b360fc3c5802ff2f8734858d
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Sun Nov 8 12:00:39 2026 +0800
+
+    added inventory.json
+
+commit f5937d462610ebae3b0c53afa23661b1f46fc575
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Fri Nov 6 19:27:47 2026 +0800
+
+    Gave every class its own file
+
+commit de7a24d69590728a0adc804a40b1a2d1d2f25af2
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Fri Nov 6 19:18:13 2026 +0800
+
+    Add Remove Product and Create Order to the menu
+
+commit 0b701e5b585c71df563c9def513f8750097d0db2
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Fri Nov 6 19:11:04 2026 +0800
+
+    Tested LSP and polymorphism, and saved products polymorphically
+
+commit 3f3b09f36d998475e0e4c26ff3d275330193f5d3
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Fri Nov 6 19:05:48 2026 +0800
+
+    Added type hints to the rest of the code
+
+commit 090f0a7c07aa9127acbda1f71c9c8dc2cf745a14
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Fri Nov 6 18:57:03 2026 +0800
+
+    Created Order and OrderLine classes using composition
+
+commit 0bf2cb6329594b54fb970c8cd822ce18eb06085b
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Fri Nov 6 18:47:45 2026 +0800
+
+    Added remove_product() and find_product() to Inventory
+
+commit b974da4a035a029ba526b973bf237ced033f6b66
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Fri Nov 6 18:41:14 2026 +0800
+
+    Associated each Product with a Supplier
+
+commit 0ea455ea68e9370baa210da2ba11d073fff9fd7b
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Fri Nov 6 11:34:37 2026 +0800
+
+    created Supplier Class
+
+commit 1703d4387e4f02567a6ddb15f768dd077fcc90e4
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Fri Nov 6 00:48:20 2026 +0800
+
+    added log.txt
+
+commit 771d66ab890694b7ea951083932495a078b21d4a
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Fri Nov 6 00:46:11 2026 +0800
+
+    Save inventory with physical and digital products
+
+commit 43b0b3b9b57dc33ea8fb91e429ecf91ca268901d
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Fri Nov 6 00:36:40 2026 +0800
+
+    fixed .gitignore & reset inventory.json
+
+commit 61041607d25f0b22d8777b429c0ca31d587bfa0e
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Fri Nov 6 00:04:50 2026 +0800
+
+    Added CanBeShipped interface with shipping costs
+
+commit 3fa8e004611588a4c09501f2110d4329dd366bb1
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Nov 5 23:53:01 2026 +0800
+
+    Made Product an abstract class with get_fulfilment_info()
+
+commit 8150ff30904eadb1f74201ae8c066cffbf8fe19a
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Nov 5 23:43:32 2026 +0800
+
+    Support physical and digital products in the menu and JSON file
+
+commit a16e66f688d841821bd33b688cda51382b0a6225
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Nov 5 23:31:37 2026 +0800
+
+    Override display methods to reuse Product with super()
+
+commit 35456661f143b24ef316f0c4d375e2581de7ff10
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Nov 5 23:24:38 2026 +0800
+
+    Created DigitalProduct class with download size
+
+commit d87f669a424d64b5fd90b17a82af2a99d4f73c9a
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Nov 5 23:15:20 2026 +0800
+
+    Created PhysicalProduct class with weight
+
+commit f5db37a6e65d3e049589cf07dca21aeb4a5f7548
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Nov 5 23:05:17 2026 +0800
+
+    Add .gitignore for Python cache and editor files
+
+commit e9640f3c62e14cf6f0c7445e61f8baf24f01f029
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Oct 29 23:24:46 2026 +0800
+
+    menu options will now be shown everytime user is asked to 'Enter option'
+
+commit 5ac04339fbaa332f4625a3199d8f45187cb5db8b
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Oct 29 23:03:17 2026 +0800
+
+    bad records in inventory.json are skipped, and Ctrl+C stops the program with a message instead of an error
+
+commit aa558a1c408731c4e552fba513c9daa7bde02af3
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Oct 29 22:56:26 2026 +0800
+
+    refactored inventory system using OOP
+
+commit 7619a8a51e74e28730e9762620f3ad73e9f61341
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Oct 29 22:47:41 2026 +0800
+
+    Created Inventory class
+
+commit b96548c92e92383abdb56b2268ea67846313c344
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Oct 29 22:41:26 2026 +0800
+
+    Created Product class
+
+commit 744ef8a191ae6c02aba5e81743d3121a78ed326c
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Oct 29 22:35:14 2026 +0800
+
+    Starting Lab 6 from Week 5 inventory system
+
+commit 3ebb39cbf408b1aa5bd8bf55a9d2552316971fba
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Oct 8 17:58:47 2026 +0800
+
+    final save_inventory is verified
+
+commit e7e98dcc15f79966b4a525fccc22021dc15d3ef9
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Oct 8 17:46:52 2026 +0800
+
+    added load_inventory
+
+commit 4cd8e41ec41617c804b416ccfe6aba6ff7f077e8
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Oct 8 17:28:12 2026 +0800
+
+    created the Dictionary and added a few products
+
+commit a86b051b89cb109d3a34cb05d53e495af7385457
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Oct 8 17:15:56 2026 +0800
+
+    added headers
+
+commit 027531da0e0c4341bb89b6b1e0f46262b304e7a9
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Oct 8 17:01:59 2026 +0800
+
+    Restruture repository: Files moved to subdirectory
+
+commit 7d8ac15bc5fa292368fbd9e8deedfb9484d1a9be
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Oct 8 16:55:14 2026 +0800
+
+    Log.txt removed as it's not part of code
+
+commit df50c0693de54fde7ed9bedac4fe3ccc6a119a6c
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Sep 17 22:02:35 2026 +0800
+
+    testing
+
+commit 8af23193178f24e5ed966d5042baf785a9140c42
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Sep 17 21:50:41 2026 +0800
+
+    Smart Inventor Auditor
+
+commit fe469af079290510c4bf611b55b0c785c947831d
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Sep 10 17:01:58 2026 +0800
+
+    Fifth  Post
+
+commit 045dcac07489278ab004ef5a4bef989e34300eb2
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Sep 10 16:57:37 2026 +0800
+
+    Fourth Post
+
+commit 2de949b1b28cdcc9c5d48105bb361d9566df729f
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Sep 10 16:50:37 2026 +0800
+
+    Third Post
+
+commit 2b686cca8dfc8d097c29861b7eccf3904615859a
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Sep 10 16:46:05 2026 +0800
+
+    Second Post
+
+commit 2789453721d8d1f0d3cfabdf9754020272640dd6
+Author: maxgeorge <2605782@sit.singaporetech.edu.sg>
+Date:   Thu Sep 10 16:34:00 2026 +0800
+
+    First Post
