@@ -1,0 +1,67 @@
+[
+    {
+        "id": "P001",
+        "name": "Laptop",
+        "price": 1200.0,
+        "stock": 15,
+        "supplier": {
+            "supplier_id": "S001",
+            "name": "Acme Components",
+            "contact_email": "sales@acme.example.com"
+        },
+        "type": "physical",
+        "weight": 2.5
+    },
+    {
+        "id": "P002",
+        "name": "Mouse",
+        "price": 25.5,
+        "stock": 40,
+        "supplier": {
+            "supplier_id": "S001",
+            "name": "Acme Components",
+            "contact_email": "sales@acme.example.com"
+        },
+        "type": "physical",
+        "weight": 0.2
+    },
+    {
+        "id": "P003",
+        "name": "Keyboard",
+        "price": 45.0,
+        "stock": 25,
+        "supplier": {
+            "supplier_id": "S001",
+            "name": "Acme Components",
+            "contact_email": "sales@acme.example.com"
+        },
+        "type": "physical",
+        "weight": 0.9
+    },
+    {
+        "id": "P004",
+        "name": "Monitor",
+        "price": 299.99,
+        "stock": 10,
+        "supplier": {
+            "supplier_id": "S002",
+            "name": "Brightview Displays",
+            "contact_email": "orders@brightview.example.com"
+        },
+        "type": "physical",
+        "weight": 4.5
+    },
+    {
+        "id": "D001",
+        "name": "Photo Editor",
+        "price": 79.99,
+        "stock": 100,
+        "supplier": {
+            "supplier_id": "S003",
+            "name": "Cloudline Software",
+            "contact_email": "licences@cloudline.example.com"
+        },
+        "type": "digital",
+        "download_size": 850.0
+    }
+][]
