@@ -1,3 +1,4 @@
+import csv
 import json
 import math
 import os
@@ -114,6 +115,65 @@ def save_inventory(inventory: Inventory) -> bool:
         return False
 
     return True
+
+
+def read_price(text: str) -> float:
+    # float() raises ValueError for text like "abc"; this says so plainly.
+    try:
+        return float(text)
+    except ValueError:
+        raise ValueError(f"Price '{text}' is not a number.") from None
+
+
+def read_stock(text: str) -> int:
+    try:
+        return int(text)
+    except ValueError:
+        raise ValueError(f"Stock quantity '{text}' is not a whole number.") from None
+
+
+def load_products(path: str, inventory: Inventory, supplier: Supplier) -> None:
+    # Reads products from a CSV file. A missing file is reported instead of
+    # crashing, and a bad row is reported and skipped while the rest load.
+    try:
+        file = open(path, newline="")
+    except FileNotFoundError:
+        print(f"Products file not found: {path}")
+    else:
+        loaded = 0
+        with file:
+            reader = csv.reader(file)
+            next(reader, None)  # skip the header row
+            # The header is row 1, so the first product is on row 2.
+            for row_number, row in enumerate(reader, start=2):
+                if not row:
+                    continue  # a blank line
+
+                try:
+                    if len(row) != 5:
+                        raise ValueError(f"Expected 5 values but found {len(row)}.")
+
+                    product_type, product_id, name, price, stock_quantity = [
+                        value.strip() for value in row
+                    ]
+                    product = ProductFactory.create(
+                        product_type, product_id, name,
+                        read_price(price), read_stock(stock_quantity), supplier,
+                    )
+                except ValueError as error:
+                    print(f"Row {row_number} skipped: {error}")
+                    continue
+
+                # A duplicate ID is a broken rule, checked by Inventory, not an exception.
+                if inventory.add_product(product):
+                    loaded += 1
+                else:
+                    print(f"Row {row_number} skipped: {product.get_product_id()} "
+                          f"is already in the inventory.")
+
+        print(f"{loaded} products loaded.")
+    finally:
+        print("Load attempt finished.")
 
 
 # ---------- Input validation ----------
