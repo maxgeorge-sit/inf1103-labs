@@ -11,6 +11,7 @@ from no_discount import NoDiscount
 from order import Order
 from percentage_discount import PercentageDiscount
 from physical_product import PhysicalProduct
+from student_discount import StudentDiscount
 from supplier import Supplier
 
 # The project folder: the one that holds this tests folder.
@@ -45,7 +46,8 @@ class TestDiscountStrategies(unittest.TestCase):
 
     def test_every_strategy_is_a_discount_strategy(self) -> None:
         """Each discount inherits from DiscountStrategy."""
-        for strategy in [NoDiscount(), PercentageDiscount(10), BulkDiscount(200, 20)]:
+        strategies = [NoDiscount(), PercentageDiscount(10), BulkDiscount(200, 20), StudentDiscount()]
+        for strategy in strategies:
             with self.subTest(strategy=type(strategy).__name__):
                 self.assertIsInstance(strategy, DiscountStrategy)
 
@@ -66,6 +68,10 @@ class TestDiscountStrategies(unittest.TestCase):
     def test_bulk_discount_below_the_threshold(self) -> None:
         """BulkDiscount(200, 20) leaves a total under 200 unchanged."""
         self.assertAlmostEqual(BulkDiscount(200, 20).apply(199.99), 199.99)
+
+    def test_student_discount_takes_five_percent_off(self) -> None:
+        """StudentDiscount takes 5% off: 250 becomes 237.50."""
+        self.assertAlmostEqual(StudentDiscount().apply(250.0), 237.5)
 
     def test_invalid_percentages_are_refused(self) -> None:
         """A percentage must be a number above 0 and no more than 100."""
@@ -106,6 +112,10 @@ class TestOrderDiscounts(unittest.TestCase):
         order = make_order(recorder)
         self.assertEqual(order.calculate_total(), 1.0)
         self.assertEqual(recorder.received, [250.0])
+
+    def test_order_works_with_student_discount(self) -> None:
+        """Order uses the new StudentDiscount without being changed."""
+        self.assertAlmostEqual(make_order(StudentDiscount()).calculate_total(), 237.5)
 
     def test_two_orders_can_share_one_strategy(self) -> None:
         """Two orders can use the same PercentageDiscount object."""
@@ -168,10 +178,11 @@ class TestDiscountChoice(unittest.TestCase):
         self.assertIsInstance(parse_discount("1"), NoDiscount)
         self.assertIsInstance(parse_discount("2"), PercentageDiscount)
         self.assertIsInstance(parse_discount("3"), BulkDiscount)
+        self.assertIsInstance(parse_discount("4"), StudentDiscount)
 
     def test_other_entries_are_refused(self) -> None:
         """Any other entry is refused, so the user is asked again."""
-        for entry in ["0", "4", "", "two", "1.5"]:
+        for entry in ["0", "5", "", "two", "1.5"]:
             with self.subTest(entry=entry):
                 with self.assertRaises(ValueError):
                     parse_discount(entry)

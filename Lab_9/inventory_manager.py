@@ -17,6 +17,7 @@ from order import Order
 from percentage_discount import PercentageDiscount
 from physical_product import PhysicalProduct
 from product import Product, ProductRecord
+from student_discount import StudentDiscount
 from supplier import Supplier, SupplierRecord
 
 INVENTORY_FILE = "inventory.json"
@@ -27,6 +28,7 @@ DISCOUNT_OPTIONS: list[tuple[str, DiscountStrategy]] = [
     ("No discount", NoDiscount()),
     ("10% off", PercentageDiscount(10)),
     ("$20 off orders of $200 or more", BulkDiscount(200, 20)),
+    ("Student discount: 5% off", StudentDiscount()),
 ]
 
 

@@ -24,6 +24,7 @@ from order_line import OrderLine
 from percentage_discount import PercentageDiscount
 from physical_product import PhysicalProduct
 from product import Product
+from student_discount import StudentDiscount
 from supplier import Supplier
 
 # Every class in the project. Each one lives in its own file.
@@ -40,6 +41,7 @@ PROJECT_CLASSES = [
     NoDiscount,
     PercentageDiscount,
     BulkDiscount,
+    StudentDiscount,
 ]
 
 # Each check as (passed, description), so a failed check can be named.
