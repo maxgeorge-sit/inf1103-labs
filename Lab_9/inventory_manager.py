@@ -6,16 +6,28 @@ from typing import TypeVar
 
 # Each class lives in its own file; this file is the program around them:
 # saving and loading, input checks, and the menu.
+from bulk_discount import BulkDiscount
 from can_be_shipped import CanBeShipped
 from constants import DIVIDER
 from digital_product import DigitalProduct
+from discount_strategy import DiscountStrategy
 from inventory import Inventory
+from no_discount import NoDiscount
 from order import Order
+from percentage_discount import PercentageDiscount
 from physical_product import PhysicalProduct
 from product import Product, ProductRecord
 from supplier import Supplier, SupplierRecord
 
 INVENTORY_FILE = "inventory.json"
+
+# The discounts Create Order offers. A new discount means a new strategy
+# class and one more line here; Order itself never changes.
+DISCOUNT_OPTIONS: list[tuple[str, DiscountStrategy]] = [
+    ("No discount", NoDiscount()),
+    ("10% off", PercentageDiscount(10)),
+    ("$20 off orders of $200 or more", BulkDiscount(200, 20)),
+]
 
 
 # ---------- File handling ----------
@@ -197,6 +209,15 @@ def parse_quantity(entry: str) -> int:
     return quantity
 
 
+def parse_discount(entry: str) -> DiscountStrategy:
+    # The number of a discount in DISCOUNT_OPTIONS, counting from 1.
+    numbers = [str(number) for number in range(1, len(DISCOUNT_OPTIONS) + 1)]
+    if entry not in numbers:
+        raise ValueError(f"Enter a number from 1 to {len(DISCOUNT_OPTIONS)}.")
+
+    return DISCOUNT_OPTIONS[int(entry) - 1][1]
+
+
 # T stands for whatever type the parser returns, so ask_until_valid() returns
 # that same type: a str from parse_text(), an int from parse_stock(), and so on.
 T = TypeVar("T")
@@ -356,6 +377,13 @@ def create_order_menu(inventory: Inventory) -> None:
     if not order.get_order_lines():
         print("\nNo products were added, so no order was created.")
         return
+
+    print("\nDiscounts:")
+    for number, (description, _) in enumerate(DISCOUNT_OPTIONS, start=1):
+        print(f"{number}. {description}")
+
+    # The order starts with NoDiscount; set_discount() swaps in the choice.
+    order.set_discount(ask_until_valid("Choose a discount: ", parse_discount))
 
     print()
     order.display_information()
