@@ -63,5 +63,18 @@
         },
         "type": "digital",
         "download_size": 850.0
+    },
+    {
+        "id": "P006",
+        "name": "Office Chair",
+        "price": 149.99,
+        "stock": 3,
+        "supplier": {
+            "supplier_id": "S001",
+            "name": "Acme Components",
+            "contact_email": "sales@acme.example.com"
+        },
+        "type": "physical",
+        "weight": 7.5
     }
 ]
