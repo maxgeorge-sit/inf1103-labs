@@ -154,8 +154,8 @@ def parse_price(entry: str) -> float:
     if not math.isfinite(price):
         raise ValueError("Enter a valid price, e.g. 299.99.")
 
-    if price < 0:
-        raise ValueError("Price cannot be negative.")
+    if price <= 0:
+        raise ValueError("Price must be greater than zero.")
 
     return price
 

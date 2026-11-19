@@ -20,8 +20,11 @@ class Product(ABC):
         if isinstance(price, bool) or not isinstance(price, (int, float)):
             raise ValueError("Price must be a number.")
 
-        if not math.isfinite(price) or price < 0:
-            raise ValueError("Price must be 0 or more.")
+        if not math.isfinite(price):
+            raise ValueError("Price must be a number.")
+
+        if price <= 0:
+            raise ValueError("Price must be greater than zero.")
 
         # The Supplier is created on its own and handed in, so the product
         # refers to it (association) instead of owning it.
