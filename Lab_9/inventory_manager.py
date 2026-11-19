@@ -145,21 +145,6 @@ def parse_stock(entry: str) -> int:
     return quantity
 
 
-def parse_price(entry: str) -> float:
-    try:
-        price = float(entry)
-    except ValueError:
-        raise ValueError("Enter a valid price, e.g. 299.99.") from None
-
-    if not math.isfinite(price):
-        raise ValueError("Enter a valid price, e.g. 299.99.")
-
-    if price <= 0:
-        raise ValueError("Price must be greater than zero.")
-
-    return price
-
-
 def parse_product_type(entry: str) -> str:
     choice = entry.lower()
 
@@ -170,18 +155,6 @@ def parse_product_type(entry: str) -> str:
         return "digital"
 
     raise ValueError("Enter 1 for Physical or 2 for Digital.")
-
-
-def parse_positive_number(entry: str) -> float:
-    try:
-        number = float(entry)
-    except ValueError:
-        raise ValueError("Enter a number, e.g. 2.5.") from None
-
-    if not math.isfinite(number) or number <= 0:
-        raise ValueError("Enter a number greater than 0.")
-
-    return number
 
 
 def parse_email(entry: str) -> str:
@@ -223,6 +196,25 @@ def ask_until_valid(prompt: str, parser: Callable[[str], T]) -> T:
             return parser(input(prompt).strip())
         except ValueError as error:
             print(f"Error: {error}")
+
+
+def get_positive_float(prompt: str) -> float:
+    # Keeps asking until the user types a number greater than zero.
+    while True:
+        try:
+            value = float(input(prompt))
+        except ValueError:
+            # Exception handling: float() can't turn text such as "abc" into a number.
+            print("Please enter a valid number, e.g. 12.50")
+            continue
+
+        # Validation: the text was a number, but is it one we can use?
+        if not math.isfinite(value):
+            print("Please enter a valid number, e.g. 12.50")
+        elif value <= 0:
+            print("Please enter a number greater than zero.")
+        else:
+            return value
 
 
 # ---------- Main program ----------
@@ -278,15 +270,15 @@ def add_product_menu(inventory: Inventory) -> None:
         return
 
     name = ask_until_valid("Product Name: ", parse_text)
-    price = ask_until_valid("Price: ", parse_price)
+    price = get_positive_float("Price: ")
     stock = ask_until_valid("Stock Quantity: ", parse_stock)
     supplier = choose_supplier(inventory)
 
     # Each type needs one more number: a weight or a download size.
     if product_type == "physical":
-        size = ask_until_valid("Weight (kg): ", parse_positive_number)
+        size = get_positive_float("Weight (kg): ")
     else:
-        size = ask_until_valid("Download Size (MB): ", parse_positive_number)
+        size = get_positive_float("Download Size (MB): ")
 
     # The factory decides which subclass to create.
     product = ProductFactory.create(product_type, product_id, name, price, stock, supplier, size)
