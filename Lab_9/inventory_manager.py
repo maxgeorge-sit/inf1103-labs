@@ -9,14 +9,13 @@ from typing import TypeVar
 from bulk_discount import BulkDiscount
 from can_be_shipped import CanBeShipped
 from constants import DIVIDER
-from digital_product import DigitalProduct
 from discount_strategy import DiscountStrategy
 from inventory import Inventory
 from no_discount import NoDiscount
 from order import Order
 from percentage_discount import PercentageDiscount
-from physical_product import PhysicalProduct
 from product import Product, ProductRecord
+from product_factory import ProductFactory
 from student_discount import StudentDiscount
 from supplier import Supplier, SupplierRecord
 
@@ -50,20 +49,13 @@ def create_supplier(record: SupplierRecord, suppliers: dict[str, Supplier]) -> S
 def create_product(record: ProductRecord, suppliers: dict[str, Supplier]) -> Product:
     supplier = create_supplier(record["supplier"], suppliers)
 
-    # The "type" saved with each record says which subclass to rebuild.
-    if record["type"] == "physical":
-        return PhysicalProduct(
-            record["id"], record["name"], record["price"], record["stock"],
-            supplier, record["weight"],
-        )
-
-    if record["type"] == "digital":
-        return DigitalProduct(
-            record["id"], record["name"], record["price"], record["stock"],
-            supplier, record["download_size"],
-        )
-
-    raise ValueError(f"Unknown product type: {record['type']}")
+    # A physical product saved its weight, and a digital one its download
+    # size. The factory knows which is which, so pass on whichever is there.
+    size = record["weight"] if "weight" in record else record["download_size"]
+    return ProductFactory.create(
+        record["type"], record["id"], record["name"], record["price"],
+        record["stock"], supplier, size,
+    )
 
 
 def load_inventory(inventory: Inventory) -> None:
@@ -290,14 +282,14 @@ def add_product_menu(inventory: Inventory) -> None:
     stock = ask_until_valid("Stock Quantity: ", parse_stock)
     supplier = choose_supplier(inventory)
 
-    # Ask for the one extra detail this type needs, then create that subclass.
+    # Each type needs one more number: a weight or a download size.
     if product_type == "physical":
-        weight = ask_until_valid("Weight (kg): ", parse_positive_number)
-        product = PhysicalProduct(product_id, name, price, stock, supplier, weight)
+        size = ask_until_valid("Weight (kg): ", parse_positive_number)
     else:
-        download_size = ask_until_valid("Download Size (MB): ", parse_positive_number)
-        product = DigitalProduct(product_id, name, price, stock, supplier, download_size)
+        size = ask_until_valid("Download Size (MB): ", parse_positive_number)
 
+    # The factory decides which subclass to create.
+    product = ProductFactory.create(product_type, product_id, name, price, stock, supplier, size)
     inventory.add_product(product)
     print("\nProduct added successfully!")
 

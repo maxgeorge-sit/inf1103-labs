@@ -24,6 +24,7 @@ from order_line import OrderLine
 from percentage_discount import PercentageDiscount
 from physical_product import PhysicalProduct
 from product import Product
+from product_factory import ProductFactory
 from student_discount import StudentDiscount
 from supplier import Supplier
 
@@ -42,6 +43,7 @@ PROJECT_CLASSES = [
     PercentageDiscount,
     BulkDiscount,
     StudentDiscount,
+    ProductFactory,
 ]
 
 # Each check as (passed, description), so a failed check can be named.
@@ -450,6 +452,9 @@ def check_type_hints():
         for class_name, cls in inspect.getmembers(module, inspect.isclass):
             if cls.__module__ == module.__name__:
                 for method_name, method in vars(cls).items():
+                    # A @staticmethod wraps its function, so unwrap it to check it too.
+                    if isinstance(method, staticmethod):
+                        method = method.__func__
                     if inspect.isfunction(method):
                         missing += missing_hints(f"{class_name}.{method_name}", method)
 
