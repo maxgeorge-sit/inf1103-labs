@@ -1,0 +1,305 @@
+
+============================================================
+Physical products store and display their weight
+============================================================
+guitar.display_information() prints:
+ID: P005
+Name: Guitar
+Price: $350.00
+Stock: 5
+Supplier: Acme Components (S001)
+Weight: 3.50 kg
+
+print(guitar) prints:
+ID: P005 | Name: Guitar | Price: $350.00 | Stock: 5 | Weight: 3.50 kg
+
+PASS: a PhysicalProduct is-a Product
+PASS: the weight is stored
+PASS: the shared product details are displayed
+PASS: the weight is displayed
+PASS: print(guitar) shows the weight too
+PASS: a negative weight is refused
+
+============================================================
+Digital products store and display their download size
+============================================================
+operating_system.display_information() prints:
+ID: D002
+Name: Operating System
+Price: $139.99
+Stock: 50
+Supplier: Acme Components (S001)
+Download Size: 4500.00 MB
+
+print(operating_system) prints:
+ID: D002 | Name: Operating System | Price: $139.99 | Stock: 50 | Download Size: 4500.00 MB
+
+PASS: a DigitalProduct is-a Product
+PASS: the download size is stored
+PASS: the shared product details are displayed
+PASS: the download size is displayed
+PASS: print(operating_system) shows the download size too
+PASS: a download size of 0 is refused
+
+============================================================
+Both subclasses implement get_fulfilment_info()
+============================================================
+Guitar: This product requires physical shipping.
+Operating System: This product is delivered digitally as a download.
+
+PASS: PhysicalProduct says it is shipped
+PASS: DigitalProduct says it is delivered digitally
+
+============================================================
+The abstract Product class cannot be created directly
+============================================================
+TypeError: Can't instantiate abstract class Product without an implementation for abstract method 'get_fulfilment_info'
+
+PASS: creating a Product directly is refused
+PASS: a subclass without get_fulfilment_info() is refused
+
+============================================================
+Physical products can calculate shipping costs
+============================================================
+Rule: a $5.00 base fee plus $2.00 per kg
+
+PASS: a 0.2 kg product costs $5.40 to ship (expected $5.40)
+PASS: a 3.5 kg product costs $12.00 to ship (expected $12.00)
+PASS: a 10.0 kg product costs $25.00 to ship (expected $25.00)
+PASS: signing CanBeShipped without calculate_shipping_cost() is refused
+
+============================================================
+Digital products are not required to implement shipping
+============================================================
+PASS: a PhysicalProduct signs CanBeShipped
+PASS: a DigitalProduct does not sign CanBeShipped
+PASS: a DigitalProduct has no shipping method and can still be created
+
+============================================================
+A Supplier stores and displays its own details
+============================================================
+supplier.display_information() prints:
+Supplier ID: S001
+Name: Acme Components
+Contact Email: sales@acme.example.com
+
+PASS: the supplier ID is stored, in capitals
+PASS: the name is stored
+PASS: the contact email is stored
+PASS: display_information() shows the supplier's details
+PASS: an email without an @ sign is refused
+
+============================================================
+Supplier and Product are associated, and exist independently
+============================================================
+The supplier, reached through Guitar:
+Supplier ID: S001
+Name: Acme Components
+Contact Email: sales@acme.example.com
+
+The supplier, reached through Operating System:
+Supplier ID: S001
+Name: Acme Components
+Contact Email: sales@acme.example.com
+
+PASS: the PhysicalProduct stores a reference to the Supplier
+PASS: the DigitalProduct refers to the same Supplier object
+PASS: a product's display_information() includes its supplier
+PASS: the Supplier and the Products are separate objects
+After del supplier, the guitar can still reach its supplier:
+Supplier ID: S001
+Name: Acme Components
+Contact Email: sales@acme.example.com
+
+PASS: after del supplier, both products still reach the Supplier
+PASS: a Supplier can exist with no products
+PASS: deleting a product does not delete its Supplier
+PASS: a supplier's name instead of a Supplier object is refused
+
+============================================================
+Inventory operations continue to work
+============================================================
+
+Current Inventory
+------------------------------------------------
+ID: P005 | Name: Guitar | Price: $350.00 | Stock: 5 | Weight: 3.50 kg
+ID: D002 | Name: Operating System | Price: $139.99 | Stock: 45 | Download Size: 4500.00 MB
+------------------------------------------------
+
+PASS: a PhysicalProduct can be added
+PASS: a DigitalProduct can be added
+PASS: a duplicate ID is refused
+PASS: find_product() finds a product by ID, ignoring case
+PASS: update_stock() changes the stock
+PASS: display_all() shows each product's own extra detail
+
+============================================================
+Inventory aggregates Products: removing one does not destroy it
+============================================================
+PASS: the product is added to Inventory A
+PASS: remove_product() hands back the same Product object
+PASS: Inventory A no longer holds it
+The removed product still works:
+ID: P007
+Name: Desk Lamp
+Price: $35.00
+Stock: 10
+Supplier: Acme Components (S001)
+Weight: 1.20 kg
+
+PASS: the removed product can still be used
+PASS: the same object is now in Inventory B
+PASS: Inventory B is now empty
+PASS: the product still exists after both inventories let go
+PASS: removing an unknown ID returns None
+
+============================================================
+An Order creates and owns its OrderLines
+============================================================
+Order O001
+------------------------------------------------
+2 x Guitar (P005) @ $350.00 = $700.00
+1 x Operating System (D002) @ $139.99 = $139.99
+------------------------------------------------
+Total: $839.99
+
+PASS: add_order_line() created 2 OrderLines
+PASS: an OrderLine refers to the Product itself, not a copy
+PASS: a line's subtotal is price x quantity ($700.00)
+PASS: the total adds up the lines' subtotals ($839.99)
+PASS: display_information() shows every line and the total
+PASS: only the Order can add or remove its lines
+OrderLine in O001: id 4422611504
+OrderLine in O002: id 4425093904
+Product in each line: id 4422218480 and id 4422218480
+
+PASS: each Order made its own OrderLine (2 OrderLines)
+PASS: both lines refer to the same Product (1 Product)
+PASS: remove_order_line() removes a line through the Order
+PASS: the total updates after a line is removed ($700.00)
+PASS: deleting the Order deletes its OrderLines too
+PASS: the Product is not deleted with the Order
+PASS: a quantity of 0 is refused
+
+============================================================
+Type hints are present on every method and function
+============================================================
+Some of the signatures, as Python reads them:
+  Supplier.__init__(self, supplier_id: str, name: str, contact_email: str) -> None
+  Product.get_supplier(self) -> Supplier
+  Inventory.remove_product(self, product_id: str) -> Product | None
+  Inventory.find_product(self, product_id: str) -> Product | None
+  Order.add_order_line(self, product: Product, quantity: int) -> None
+  OrderLine.calculate_subtotal(self) -> float
+
+PASS: every parameter and return value in every file has a type hint (missing: none)
+PASS: find_product() promises to return a Product or None
+
+============================================================
+Every class has its own file
+============================================================
+PASS: Supplier is the only class in supplier.py
+PASS: Product is the only class in product.py
+PASS: CanBeShipped is the only class in can_be_shipped.py
+PASS: PhysicalProduct is the only class in physical_product.py
+PASS: DigitalProduct is the only class in digital_product.py
+PASS: Inventory is the only class in inventory.py
+PASS: OrderLine is the only class in order_line.py
+PASS: Order is the only class in order.py
+PASS: inventory_manager.py holds the program around the classes, not classes
+
+============================================================
+Both subclasses can stand in for Product (LSP)
+============================================================
+show_product_details() with a PhysicalProduct:
+ID: P005
+Name: Guitar
+Price: $350.00
+Stock: 5
+Supplier: Acme Components (S001)
+Weight: 3.50 kg
+This product requires physical shipping.
+
+PASS: show_product_details() works with a PhysicalProduct, unchanged
+PASS: a PhysicalProduct keeps Product's update_stock() rules
+show_product_details() with a DigitalProduct:
+ID: D002
+Name: Operating System
+Price: $139.99
+Stock: 50
+Supplier: Acme Components (S001)
+Download Size: 4500.00 MB
+This product is delivered digitally as a download.
+
+PASS: show_product_details() works with a DigitalProduct, unchanged
+PASS: a DigitalProduct keeps Product's update_stock() rules
+PASS: Inventory's normal operations work on both kinds of product
+Creating a NoStockDigitalProduct fails with NotImplementedError: Digital products have no stock
+
+PASS: a subclass that refuses update_stock() breaks code written for Product
+
+============================================================
+One loop over Product references runs each subclass's methods
+============================================================
+ID: P005
+Name: Guitar
+Price: $350.00
+Stock: 5
+Supplier: Acme Components (S001)
+Weight: 3.50 kg
+This product requires physical shipping.
+
+ID: D002
+Name: Operating System
+Price: $139.99
+Stock: 50
+Supplier: Acme Components (S001)
+Download Size: 4500.00 MB
+This product is delivered digitally as a download.
+
+PASS: the guitar ran PhysicalProduct's display_information() and get_fulfilment_info()
+PASS: the operating system ran DigitalProduct's versions of both methods
+
+============================================================
+JSON saving and loading keep each product's type
+============================================================
+The saved inventory.json:
+[
+    {
+        "id": "P005",
+        "name": "Guitar",
+        "price": 350.0,
+        "stock": 5,
+        "supplier": {
+            "supplier_id": "S001",
+            "name": "Acme Components",
+            "contact_email": "sales@acme.example.com"
+        },
+        "type": "physical",
+        "weight": 3.5
+    },
+    {
+        "id": "D002",
+        "name": "Operating System",
+        "price": 139.99,
+        "stock": 50,
+        "supplier": {
+            "supplier_id": "S001",
+            "name": "Acme Components",
+            "contact_email": "sales@acme.example.com"
+        },
+        "type": "digital",
+        "download_size": 4500.0
+    }
+]
+
+inventory.json found.
+Inventory loaded successfully.
+
+PASS: save_inventory() wrote the file
+PASS: the guitar comes back as a PhysicalProduct with its weight
+PASS: the operating system comes back as a DigitalProduct with its download size
+PASS: the supplier comes back too, as one Supplier shared by both products
+
+============================================================
+86 of 86 checks passed.
