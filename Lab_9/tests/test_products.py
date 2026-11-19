@@ -1,3 +1,7 @@
+# The Lab 8 checks, kept so you can see Lab 9's changes don't break them.
+# To see a PASS or FAIL line for each one, run this from the project folder:
+#     python3 -m tests.test_products
+# python3 -m unittest runs them too, as the one test at the bottom of this file.
 import contextlib
 import inspect
 import io
@@ -8,12 +12,16 @@ import unittest
 import weakref
 
 import inventory_manager
+from bulk_discount import BulkDiscount
 from can_be_shipped import CanBeShipped
 from digital_product import DigitalProduct
+from discount_strategy import DiscountStrategy
 from inventory import Inventory
 from inventory_manager import INVENTORY_FILE, load_inventory, save_inventory
+from no_discount import NoDiscount
 from order import Order
 from order_line import OrderLine
+from percentage_discount import PercentageDiscount
 from physical_product import PhysicalProduct
 from product import Product
 from supplier import Supplier
@@ -28,6 +36,10 @@ PROJECT_CLASSES = [
     Inventory,
     OrderLine,
     Order,
+    DiscountStrategy,
+    NoDiscount,
+    PercentageDiscount,
+    BulkDiscount,
 ]
 
 # Each check as (passed, description), so a failed check can be named.
@@ -570,7 +582,7 @@ def check_json_round_trip():
     inventory.add_product(DigitalProduct("D002", "Operating System", 139.99, 50, make_supplier(), 4500))
     restored = Inventory()
 
-    # Save and load inside a temporary folder, so the real
+    # Save and load inside a temporary folder, so your real
     # inventory.json is never touched by the test.
     original_folder = os.getcwd()
     with tempfile.TemporaryDirectory() as temp_folder:
