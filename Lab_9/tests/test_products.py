@@ -411,8 +411,17 @@ def check_composition():
         check(True, "a quantity of 0 is refused")
 
 
+# From Python 3.14, Python adds a hidden function of its own, __annotate__, to
+# any file or class with type hints at its top level. Python writes those, not
+# you, so the type-hint check skips them.
+PYTHON_MADE = {"__annotate__", "__annotate_func__"}
+
+
 def missing_hints(name: str, function) -> list[str]:
     # Lists the parameters, and the return value, of a function that have no type hint.
+    if name.split(".")[-1] in PYTHON_MADE:
+        return []
+
     signature = inspect.signature(function)
     missing = [
         f"{name}({parameter.name})"
